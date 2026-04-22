@@ -1,67 +1,100 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
-const SPORTS = [
-    { name: "Athlétisme", slug: "athletisme", image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=800" },
-    { name: "Tennis", slug: "tennis", image: "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=60" },
-    { name: "Kayak", slug: "kayak", image: "https://images.unsplash.com/photo-1541625602330-2277a4c46182?w=800&auto=format&fit=crop&q=60" },
-    { name: "Natation", slug: "natation", image: "https://images.unsplash.com/photo-1530549387789-4c1017266635?w=800&auto=format&fit=crop&q=60" },
-];
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=800";
 
 export const SportsSpotlight = () => {
-    return (
-        <section className="relative py-24 overflow-hidden">
-            <div
-                className="absolute inset-0 bg-[#F97316]"
-                style={{
-                    zIndex: 0,
-                    clipPath: "polygon(0 0, 100% 0, 100% 85%, 0 100%)"
-                }}
-            />
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <h2 className="text-3xl font-bold text-white mb-8">Les sports à la une</h2>
+  const [sports, setSports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-                {/* Desktop Grid */}
-                <div className="hidden md:grid md:grid-cols-4 gap-6">
-                    {SPORTS.map((sport) => (
-                        <SportCard key={sport.name} sport={sport} />
-                    ))}
-                </div>
+  useEffect(() => {
+    const fetchSports = async () => {
+      try {
+        // Count events per sport from published future events
+        const { data: eventRows } = await supabase
+          .from("events")
+          .select("sport_id, sports(id, name, slug, image_url)")
+          .eq("status", "published")
+          .gte("starts_at", new Date().toISOString())
+          .not("sport_id", "is", null);
 
-                {/* Mobile Carousel */}
-                <div className="md:hidden">
-                    <Carousel className="w-full max-w-xs mx-auto">
-                        <CarouselContent>
-                            {SPORTS.map((sport) => (
-                                <CarouselItem key={sport.name}>
-                                    <SportCard sport={sport} />
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                        <CarouselPrevious className="left-[-20px] bg-white/20 text-white border-white/40" />
-                        <CarouselNext className="right-[-20px] bg-white/20 text-white border-white/40" />
-                    </Carousel>
+        const counts: Record<string, any> = {};
+        for (const row of eventRows || []) {
+          const s = row.sports as any;
+          if (!s) continue;
+          if (!counts[s.id]) counts[s.id] = { ...s, count: 0 };
+          counts[s.id].count++;
+        }
+
+        let top = Object.values(counts).sort((a: any, b: any) => b.count - a.count).slice(0, 6);
+
+        // Fill up to 6 with sports that have no events (alphabetical)
+        if (top.length < 6) {
+          const existingIds = new Set(top.map((s: any) => s.id));
+          const { data: allSports } = await supabase
+            .from("sports" as any)
+            .select("id, name, slug, image_url")
+            .order("name");
+
+          for (const s of allSports || []) {
+            if (top.length >= 6) break;
+            if (!existingIds.has(s.id)) top.push({ ...s, count: 0 });
+          }
+        }
+
+        setSports(top);
+      } catch (err) {
+        console.error("Error fetching sports:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSports();
+  }, []);
+
+  return (
+    <section className="relative py-24 overflow-hidden">
+      <div
+        className="absolute inset-0 bg-[#F97316]"
+        style={{ zIndex: 0, clipPath: "polygon(0 0, 100% 0, 100% 85%, 0 100%)" }}
+      />
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <h2 className="text-3xl font-bold text-white mb-8">Les sports à la une</h2>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-white/70" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {sports.map((sport: any) => (
+              <a
+                key={sport.id}
+                href={`/events?sport=${sport.slug}`}
+                className="relative rounded-xl overflow-hidden h-32 cursor-pointer group"
+              >
+                <img
+                  src={sport.image_url || FALLBACK_IMAGE}
+                  alt={sport.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute bottom-0 left-0 p-3">
+                  <p className="text-white font-bold text-sm">{sport.name}</p>
+                  {sport.count > 0 && (
+                    <p className="text-white/80 text-xs">
+                      {sport.count} événement{sport.count > 1 ? "s" : ""}
+                    </p>
+                  )}
                 </div>
-            </div>
-        </section>
-    );
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
 };
-
-const SportCard = ({ sport }: { sport: { name: string; slug: string; image: string } }) => (
-    <Link
-        to={`/events?sport=${sport.slug}`}
-        className="group relative h-40 overflow-hidden rounded-lg shadow-lg block"
-    >
-        <img
-            src={sport.image}
-            alt={sport.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
-        <div className="absolute bottom-0 left-0 w-full p-4">
-            <h3 className="text-xl font-bold text-white text-center">{sport.name}</h3>
-        </div>
-    </Link>
-);
