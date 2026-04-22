@@ -8,6 +8,10 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    --color-primary: #F97316;
+    --color-primary-hover: #EA6C0A;
+    --color-primary-light: #FFF7ED;
+
     --background: 210 20% 98%;
     --foreground: 224 71% 4%;
 

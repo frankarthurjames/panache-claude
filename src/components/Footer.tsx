@@ -29,7 +29,7 @@ export const Footer = () => {
               </span>
             </div>
             <div className="text-[10px] text-white font-medium">
-              Tout droit réservés - Panache 2021
+              Tout droit réservés - Panache {new Date().getFullYear()}
             </div>
           </div>
 

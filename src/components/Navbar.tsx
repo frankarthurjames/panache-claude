@@ -66,6 +66,12 @@ export const Navbar = ({ variant = "transparent" }: NavbarProps) => {
                 {link.label}
               </Link>
             ))}
+            <Link
+              to="/organisateurs"
+              className={`font-semibold text-sm transition-colors ${location.pathname === '/organisateurs' ? 'text-orange-400' : 'text-orange-400 hover:text-orange-300'}`}
+            >
+              Pour les organisateurs
+            </Link>
           </div>
 
           <div className="flex items-center space-x-2">
@@ -136,6 +142,13 @@ export const Navbar = ({ variant = "transparent" }: NavbarProps) => {
       {mobileOpen && (
         <div className="md:hidden bg-black/95 backdrop-blur-sm border-t border-white/10">
           <div className="container mx-auto px-4 py-4 flex flex-col space-y-1">
+            <Link
+              to="/organisateurs"
+              onClick={() => setMobileOpen(false)}
+              className="py-3 px-4 rounded-lg text-sm font-semibold text-center bg-orange-500 text-white"
+            >
+              Vous êtes organisateur ?
+            </Link>
             {navLinks.map((link) => (
               <Link
                 key={link.to}
@@ -150,10 +163,9 @@ export const Navbar = ({ variant = "transparent" }: NavbarProps) => {
               <Link
                 to="/auth?tab=signup"
                 onClick={() => setMobileOpen(false)}
-                className="mt-2 py-3 px-4 rounded-lg text-sm font-semibold text-center"
-                style={{ background: "#F97316", color: "#111827" }}
+                className="mt-2 py-3 px-4 rounded-lg text-sm font-medium text-center text-white/70 hover:text-white"
               >
-                Vous êtes organisateur ?
+                Connexion / Inscription
               </Link>
             )}
           </div>

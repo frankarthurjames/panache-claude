@@ -224,7 +224,7 @@ const AdminDashboard = () => {
             <Button onClick={() => navigate("/dashboard/organizations/new")} variant="outline" className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" /> Créer une organisation
             </Button>
-            <Button onClick={() => navigate("/dashboard/events/new")} className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto text-white">
+            <Button onClick={() => navigate("/dashboard/events/new")} className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto text-white">
               <Plus className="mr-2 h-4 w-4" /> Créer un événement
             </Button>
           </div>

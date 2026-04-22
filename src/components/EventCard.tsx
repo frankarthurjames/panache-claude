@@ -37,7 +37,7 @@ export const EventCard = ({ id, title, date, location, image, tag, tagColor, pri
       {/* Content bottom left */}
       <div className="absolute inset-x-0 bottom-6 px-6 text-white flex justify-between items-end">
         <div className="max-w-[70%]">
-          <h3 className="text-2xl font-black leading-tight mb-2 line-clamp-2">
+          <h3 className="text-2xl font-black leading-tight mb-2 line-clamp-2 [hyphens:none]">
             {title.replace(/^\[.*?\]\s*/, '')}
           </h3>
           <p className="text-sm font-bold text-white/80 uppercase tracking-wider">
