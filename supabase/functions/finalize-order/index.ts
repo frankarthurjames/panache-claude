@@ -1,0 +1,303 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface FinalizeOrderRequest {
+  sessionId: string;
+  orderId?: string;
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
+  );
+
+  try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData.user) {
+      throw new Error("Utilisateur non authentifié");
+    }
+    const user = userData.user;
+
+    const { sessionId, orderId }: FinalizeOrderRequest = await req.json();
+    if (!sessionId) throw new Error("sessionId manquant");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY manquant");
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+    console.log("[FINALIZE-ORDER] Retrieving session", { sessionId });
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status !== "paid") {
+      return new Response(JSON.stringify({ error: "Paiement non confirmé" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Load the order by session id (preferred)
+    let { data: order, error: orderErr } = await supabase
+      .from("orders")
+      .select("id, status, user_id, event_id, total_cents, stripe_payment_intent")
+      .eq("stripe_session_id", sessionId)
+      .maybeSingle();
+
+    if (!order && orderId) {
+      const alt = await supabase
+        .from("orders")
+        .select("id, status, user_id, event_id, total_cents, stripe_payment_intent")
+        .eq("id", orderId)
+        .maybeSingle();
+      order = alt.data ?? null;
+      orderErr = alt.error ?? null;
+    }
+
+    if (orderErr) throw orderErr;
+    if (!order) throw new Error("Commande introuvable");
+
+    // Ensure the order belongs to the current user
+    if (order.user_id !== user.id) {
+      throw new Error("Cette commande n'appartient pas à l'utilisateur connecté");
+    }
+
+    // If already paid, return the hydrated order
+    if (order.status === "paid") {
+      const full = await supabase
+        .from("orders")
+        .select(`
+          *,
+          events ( id, title, starts_at, venue, city ),
+          order_items ( qty, unit_price_cents, ticket_type_id, ticket_types ( name ) )
+        `)
+        .eq("id", order.id)
+        .maybeSingle();
+
+      return new Response(JSON.stringify({ order: full.data }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Load order items
+    const { data: items, error: itemsErr } = await supabase
+      .from("order_items")
+      .select("id, qty, unit_price_cents, ticket_type_id")
+      .eq("order_id", order.id);
+    if (itemsErr) throw itemsErr;
+    if (!items || items.length === 0) throw new Error("Aucun article dans la commande");
+
+    // Vérification de sécurité avant création des registrations
+    console.log("[FINALIZE-ORDER] Checking final ticket availability");
+    
+    // Récupérer les informations de l'événement et des types de billets
+    const { data: eventDetails, error: eventErr } = await supabase
+      .from("events")
+      .select("capacity")
+      .eq("id", order.event_id)
+      .single();
+    if (eventErr) throw eventErr;
+
+    const ticketTypeIds = items.map(item => item.ticket_type_id);
+    const { data: ticketTypes, error: ticketErr } = await supabase
+      .from("ticket_types")
+      .select("id, quantity")
+      .in("id", ticketTypeIds);
+    if (ticketErr) throw ticketErr;
+
+    // Compter les billets déjà vendus (registrations existantes)
+    const { data: existingRegs, error: existingErr } = await supabase
+      .from("registrations")
+      .select("ticket_type_id")
+      .eq("event_id", order.event_id);
+    if (existingErr) throw existingErr;
+
+    const soldCount: { [key: string]: number } = {};
+    existingRegs.forEach(reg => {
+      soldCount[reg.ticket_type_id] = (soldCount[reg.ticket_type_id] || 0) + 1;
+    });
+
+    // Vérifier la disponibilité pour chaque type de billet
+    for (const item of items) {
+      const ticketType = ticketTypes.find(tt => tt.id === item.ticket_type_id);
+      if (!ticketType) throw new Error(`Type de billet introuvable: ${item.ticket_type_id}`);
+      
+      const currentSold = soldCount[item.ticket_type_id] || 0;
+      if (currentSold + item.qty > ticketType.quantity) {
+        throw new Error(`Plus assez de billets disponibles. Type: ${item.ticket_type_id}`);
+      }
+    }
+
+    // Vérifier la capacité globale de l'événement
+    if (eventDetails.capacity) {
+      const totalSold = Object.values(soldCount).reduce((sum: number, count: number) => sum + count, 0);
+      const totalRequested = items.reduce((sum: number, item: any) => sum + item.qty, 0);
+      
+      if (totalSold + totalRequested > eventDetails.capacity) {
+        throw new Error(`Capacité de l'événement dépassée`);
+      }
+    }
+
+    // Create registrations (service role bypasses RLS)
+    const registrations: any[] = [];
+    for (const item of items) {
+      for (let i = 0; i < item.qty; i++) {
+        registrations.push({
+          event_id: order.event_id,
+          ticket_type_id: item.ticket_type_id,
+          order_id: order.id,
+          user_id: order.user_id,
+          status: "issued",
+        });
+      }
+    }
+
+    console.log("[FINALIZE-ORDER] Creating registrations", { count: registrations.length });
+    const { data: createdRegs, error: regErr } = await supabase
+      .from("registrations")
+      .insert(registrations)
+      .select();
+    if (regErr) throw regErr;
+
+    // Update order status + payment intent
+    const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : undefined;
+    const { error: updErr } = await supabase
+      .from("orders")
+      .update({ status: "paid", stripe_payment_intent: paymentIntentId })
+      .eq("id", order.id);
+    if (updErr) throw updErr;
+
+    // Insert payment record
+    const amountCents = session.amount_total ?? order.total_cents;
+    const currency = (session.currency ?? "eur").toUpperCase();
+    const { error: payErr } = await supabase
+      .from("payments")
+      .insert({
+        order_id: order.id,
+        amount_cents: amountCents,
+        currency,
+        provider: "stripe",
+        provider_event: session.id,
+        raw_payload: session as any,
+      });
+    if (payErr) throw payErr;
+
+    // Try to generate tickets and send emails, but don't fail the whole flow if it breaks
+    for (const reg of createdRegs ?? []) {
+      try {
+        console.log("[FINALIZE-ORDER] Starting PDF generation for registration", reg.id);
+        const pdfRes = await supabase.functions.invoke("generate-ticket-pdf", {
+          body: { registrationId: reg.id },
+        });
+        
+        if (pdfRes.error) {
+          console.error("[FINALIZE-ORDER] PDF generation error:", pdfRes.error);
+          continue;
+        }
+        
+        if (pdfRes.data?.success && pdfRes.data?.pdfUrl) {
+          console.log("[FINALIZE-ORDER] PDF generated successfully, sending email for registration", reg.id);
+          const emailRes = await supabase.functions.invoke("send-ticket-email", {
+            body: { registrationId: reg.id, pdfUrl: pdfRes.data.pdfUrl },
+          });
+          
+          if (emailRes.error) {
+            console.error("[FINALIZE-ORDER] Email sending failed:", emailRes.error);
+          } else if (emailRes.data?.success) {
+            console.log("[FINALIZE-ORDER] Email sent successfully for registration", reg.id);
+          } else {
+            console.log("[FINALIZE-ORDER] Email sending returned:", emailRes.data);
+          }
+        } else {
+          console.log("[FINALIZE-ORDER] PDF generation failed", pdfRes.data || pdfRes.error);
+        }
+      } catch (e) {
+        console.error("[FINALIZE-ORDER] Ticket generation/send error", e);
+      }
+    }
+
+    // Try to get and send Stripe invoice if payment succeeded
+    try {
+      console.log("[FINALIZE-ORDER] Attempting to retrieve Stripe invoice for order", order.id);
+      const invoiceRes = await supabase.functions.invoke("get-stripe-invoice", {
+        body: { orderId: order.id },
+      });
+      
+      if (invoiceRes.data?.invoice) {
+        console.log("[FINALIZE-ORDER] Stripe invoice retrieved successfully", invoiceRes.data.invoice.id);
+        
+        // Send invoice by email if available
+        if (invoiceRes.data.invoice.hosted_invoice_url) {
+          try {
+            const invoiceEmailRes = await supabase.functions.invoke("send-invoice-email", {
+              body: { 
+                orderId: order.id,
+                invoiceUrl: invoiceRes.data.invoice.hosted_invoice_url,
+                invoiceId: invoiceRes.data.invoice.id
+              },
+            });
+            
+            if (invoiceEmailRes.data?.success) {
+              console.log("[FINALIZE-ORDER] Invoice email sent successfully");
+            } else {
+              console.log("[FINALIZE-ORDER] Invoice email sending failed:", invoiceEmailRes.error);
+            }
+          } catch (invoiceEmailError) {
+            console.error("[FINALIZE-ORDER] Error sending invoice email:", invoiceEmailError);
+          }
+        }
+      } else if (invoiceRes.data?.receiptUrl) {
+        console.log("[FINALIZE-ORDER] Payment receipt available:", invoiceRes.data.receiptUrl);
+      } else {
+        console.log("[FINALIZE-ORDER] No Stripe invoice found for this order");
+      }
+    } catch (invoiceError) {
+      console.error("[FINALIZE-ORDER] Error retrieving Stripe invoice:", invoiceError);
+    }
+
+    // Return full order for UI
+    const { data: fullOrder, error: fullErr } = await supabase
+      .from("orders")
+      .select(`
+        *,
+        events ( id, title, starts_at, venue, city ),
+        order_items ( qty, unit_price_cents, ticket_types ( name ) )
+      `)
+      .eq("id", order.id)
+      .maybeSingle();
+    if (fullErr) throw fullErr;
+
+    return new Response(JSON.stringify({ order: fullOrder }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("[FINALIZE-ORDER] ERROR", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
