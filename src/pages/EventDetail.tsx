@@ -424,8 +424,8 @@ const EventDetail = () => {
                           </p>
                         </div>
                       </div>
-                      {organization.slug && (
-                        <a href={`/clubs/${organization.slug}`}
+                      {organization.id && (
+                        <a href={`/clubs/${organization.id}`}
                            className="block w-full text-center border border-orange-500 text-orange-500 hover:bg-orange-50 py-2 rounded-full text-sm font-medium transition-colors">
                           Voir la page du club →
                         </a>
