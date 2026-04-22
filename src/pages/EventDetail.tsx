@@ -88,7 +88,7 @@ const EventDetail = () => {
         // Fetch nearby events: same city first, fallback to any city
         const nearbyBase = supabase
           .from('events')
-          .select('id, title, city, starts_at, images, ticket_types(price_cents)')
+          .select('id, title, city, starts_at, images, ticket_types(*), sports(name)')
           .eq('status', 'published')
           .neq('id', id)
           .gte('starts_at', new Date().toISOString())
@@ -102,7 +102,7 @@ const EventDetail = () => {
         } else {
           const { data: fallback } = await supabase
             .from('events')
-            .select('id, title, city, starts_at, images, ticket_types(price_cents)')
+            .select('id, title, city, starts_at, images, ticket_types(*), sports(name)')
             .eq('status', 'published')
             .neq('id', id)
             .gte('starts_at', new Date().toISOString())
@@ -469,8 +469,7 @@ const EventDetail = () => {
                 ? (hasMultiplePrices ? `Dès ${minPrice.toFixed(0)}€` : `${minPrice.toFixed(0)}€`)
                 : 'Gratuit';
 
-              const sportMatch = e.title.match(/^\[(.*?)\]/);
-              const tag = sportMatch ? sportMatch[1] : "Sport";
+              const tag = (e.sports?.name || 'Sport').toUpperCase();
 
               return (
                 <EventCard
