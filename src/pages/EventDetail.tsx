@@ -35,6 +35,7 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<any[]>([]);
   const [copied, setCopied] = useState(false);
+  const [orgEventsCount, setOrgEventsCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -44,18 +45,21 @@ const EventDetail = () => {
         const { data, error } = await supabase
           .from('events')
           .select(`
-            *, 
-            organizations ( 
-              name, 
-              website, 
-              address, 
-              billing_email,
-              billing_country 
-            ),
-            ticket_types ( 
+            *,
+            organizations (
               id,
               name,
-              price_cents, 
+              logo_url,
+              slug,
+              website,
+              address,
+              billing_email,
+              billing_country
+            ),
+            ticket_types (
+              id,
+              name,
+              price_cents,
               currency,
               quantity,
               max_per_order
@@ -71,7 +75,17 @@ const EventDetail = () => {
         if (error) throw error;
         setEvent(data);
 
-        // Fetch nearby events (mock logic: just fetch 3 other events)
+        // Fetch published events count for this organization
+        if (data?.organization_id) {
+          const { count } = await supabase
+            .from('events')
+            .select('id', { count: 'exact' })
+            .eq('organization_id', data.organization_id)
+            .eq('status', 'published');
+          setOrgEventsCount(count ?? 0);
+        }
+
+        // Fetch nearby events
         const { data: nearby } = await supabase
           .from('events')
           .select('*')
@@ -385,6 +399,37 @@ const EventDetail = () => {
                   {organization?.billing_email && (
                     <div className="pt-2 text-center text-[11px] text-gray-400">
                       Besoin d'aide ? <a href={`mailto:${organization.billing_email}`} className="underline hover:text-orange-500">Contactez l'organisateur</a>
+                    </div>
+                  )}
+
+                  {/* Organisation card */}
+                  {organization && (
+                    <div className="border border-gray-200 rounded-xl p-5 mt-6">
+                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Organisateur</h3>
+                      <div className="flex items-center gap-3 mb-4">
+                        {organization.logo_url ? (
+                          <img src={organization.logo_url} alt={organization.name}
+                               className="w-12 h-12 rounded-full object-cover border border-gray-100" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-orange-500 font-bold text-lg">
+                              {organization.name?.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-gray-900">{organization.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {orgEventsCount} événement{orgEventsCount > 1 ? 's' : ''} publié{orgEventsCount > 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      {organization.slug && (
+                        <a href={`/clubs/${organization.slug}`}
+                           className="block w-full text-center border border-orange-500 text-orange-500 hover:bg-orange-50 py-2 rounded-full text-sm font-medium transition-colors">
+                          Voir la page du club →
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>
