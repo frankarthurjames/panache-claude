@@ -14,6 +14,7 @@ import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { DataTable } from "@/components/dashboard/DataTable";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { OnboardingBanner } from "@/components/dashboard/OnboardingBanner";
 
 const Overview = () => {
   const { user } = useAuth();
@@ -256,13 +257,21 @@ const Overview = () => {
     }
   ];
 
+  const totalEvents = globalStats.find(s => s.title === "Événements")?.value ?? 0;
+
   return (
     <PageContainer>
+      <OnboardingBanner
+        userName={user?.user_metadata?.display_name || user?.email?.split('@')[0] || 'toi'}
+        hasOrganization={organizations.length > 0}
+        nbEvents={typeof totalEvents === 'number' ? totalEvents : 0}
+        accountCreatedAt={user?.created_at ? new Date(user.created_at) : new Date()}
+      />
       <PageHeader
         title="Vue d'ensemble"
         description="Gérez toutes vos organisations et événements depuis un seul endroit."
         action={
-          <Button asChild className="bg-black hover:bg-black/90 text-white shadow-sm font-semibold rounded-xl w-full sm:w-auto">
+          <Button asChild className="bg-orange-500 hover:bg-orange-600 text-white shadow-sm font-semibold rounded-xl w-full sm:w-auto">
             <Link to={organizations.length > 0 ? `/dashboard/org/${organizations[0].id}/events/new` : "/dashboard/organizations/new"}>
               Créer un événement
             </Link>

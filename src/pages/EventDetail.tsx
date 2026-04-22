@@ -9,12 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { EventCard } from "@/components/EventCard";
 import {
   MapPin,
-  Mail,
   Globe,
-  Euro,
-  Linkedin,
-  Twitter,
-  Facebook,
   Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +34,7 @@ const EventDetail = () => {
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<any[]>([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -151,36 +147,38 @@ const EventDetail = () => {
             {eventDate} | {event.city || "Lieu à confirmer"}
           </div>
 
-          <div className="flex gap-4 mt-6">
+          <div className="flex flex-wrap gap-3 mt-6">
             <a
-              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`${event.title.replace(/^\[.*?\]\s*/, '')} — ${eventDate} à ${event.city || ''} ${window.location.href}`)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors"
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
             >
-              <Linkedin className="h-5 w-5" />
-            </a>
-            <a
-              href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(event.title)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors"
-            >
-              <Twitter className="h-5 w-5" />
+              WhatsApp
             </a>
             <a
               href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
             >
-              <Facebook className="h-5 w-5" />
+              Facebook
             </a>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+            >
+              {copied ? 'Lien copié !' : 'Copier le lien'}
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 lg:-mt-32 relative z-10 pb-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 lg:-mt-32 relative z-10 pb-24 md:pb-24 pb-36">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
 
           {/* Left Column: Description */}
@@ -280,13 +278,13 @@ const EventDetail = () => {
                   <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">
                     Détails de l'activité
                   </h3>
-                  {minPrice !== null ? (
+                  {minPrice !== null && (
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-extrabold text-black">{minPrice}€</span>
-                      <span className="text-gray-500 font-medium text-sm">/ billet</span>
+                      <span className="text-3xl font-extrabold text-black">
+                        {minPrice === 0 ? 'Gratuit' : `${minPrice}€`}
+                      </span>
+                      {minPrice > 0 && <span className="text-gray-500 font-medium text-sm">/ billet</span>}
                     </div>
-                  ) : (
-                    <span className="text-xl font-bold">Prix non disponible</span>
                   )}
                 </div>
 
@@ -334,39 +332,54 @@ const EventDetail = () => {
                                   {remaining > 0 ? `${remaining} Restants` : 'Épuisé'}
                                 </span>
                               </div>
-                              <span className="font-bold text-orange-600 text-sm">
-                                {ticket.price_cents / 100}€
+                              <span className="font-bold text-orange-500 text-sm">
+                                {ticket.price_cents === 0 ? 'Gratuit' : `${ticket.price_cents / 100}€`}
                               </span>
                             </div>
                           );
                         })
-                      ) : (
-                        <p className="text-sm text-gray-500">Aucun billet configuré</p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
-                  {/* CTA Button wrapped in Dialog */}
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        className="w-full h-14 rounded-xl bg-black hover:bg-black/90 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+                  {/* CTA Button */}
+                  {event.ticket_types && event.ticket_types.length > 0 ? (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          className={`w-full h-14 rounded-xl text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all ${
+                            event.ticket_types.some((t: any) => t.price_cents === 0)
+                              ? 'bg-green-500 hover:bg-green-600'
+                              : 'bg-orange-500 hover:bg-orange-600'
+                          }`}
+                        >
+                          {event.ticket_types.some((t: any) => t.price_cents === 0)
+                            ? 'Réserver ma place gratuitement →'
+                            : `Réserver — À partir de ${minPrice}€ →`}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
+                        <div className="max-h-[85vh] overflow-y-auto">
+                          <EventCheckout
+                            eventId={event.id}
+                            eventTitle={event.title}
+                            eventDate={eventDate}
+                            ticketTypes={event.ticket_types || []}
+                            registrations={event.registrations || []}
+                          />
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  ) : (
+                    organization?.billing_email ? (
+                      <a
+                        href={`mailto:${organization.billing_email}?subject=Inscription — ${event.title.replace(/^\[.*?\]\s*/, '')}`}
+                        className="w-full h-14 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-base flex items-center justify-center transition-all"
                       >
-                        Réserver ma place
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
-                      <div className="max-h-[85vh] overflow-y-auto">
-                        <EventCheckout
-                          eventId={event.id}
-                          eventTitle={event.title}
-                          eventDate={eventDate}
-                          ticketTypes={event.ticket_types || []}
-                          registrations={event.registrations || []}
-                        />
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                        Contacter l'organisateur
+                      </a>
+                    ) : null
+                  )}
 
                   {/* Contact info simplified */}
                   {organization?.billing_email && (
@@ -414,6 +427,35 @@ const EventDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile CTA bar */}
+      {event.ticket_types && event.ticket_types.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-white border-t border-gray-200 px-4 py-3 md:hidden">
+          <div>
+            <span className="text-lg font-bold text-gray-900">
+              {minPrice === 0 ? 'Gratuit' : minPrice !== null ? `À partir de ${minPrice}€` : ''}
+            </span>
+          </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-full transition-colors">
+                Réserver →
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
+              <div className="max-h-[85vh] overflow-y-auto">
+                <EventCheckout
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  eventDate={eventDate}
+                  ticketTypes={event.ticket_types || []}
+                  registrations={event.registrations || []}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
 
       <Footer />
     </div>

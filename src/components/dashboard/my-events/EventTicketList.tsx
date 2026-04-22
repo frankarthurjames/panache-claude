@@ -26,7 +26,7 @@ export const EventTicketList = ({
             ? "Vous n'avez pas d'événements prévus prochainement." 
             : "Vous n'avez participé à aucun événement."}
         </p>
-        <Button asChild className="rounded-xl bg-black text-white hover:bg-black/90 font-semibold h-12 px-6">
+        <Button asChild className="rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-semibold h-12 px-6">
           <Link to="/events">Découvrir les événements</Link>
         </Button>
       </div>

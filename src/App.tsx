@@ -41,6 +41,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import TestQR from "./pages/TestQR";
 import ValidateTicket from "./pages/ValidateTicket";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
+import Organisateurs from "./pages/Organisateurs";
 import { HelmetProvider } from "react-helmet-async";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ const App = () => (
               <Route path="/faq" element={<PublicRoute allowAuthenticated><FAQ /></PublicRoute>} />
               <Route path="/calendar" element={<PublicRoute allowAuthenticated><Calendar /></PublicRoute>} />
               <Route path="/contact" element={<PublicRoute allowAuthenticated><Contact /></PublicRoute>} />
+              <Route path="/organisateurs" element={<PublicRoute allowAuthenticated><Organisateurs /></PublicRoute>} />
               <Route path="/legal/terms" element={<PublicRoute allowAuthenticated><Terms /></PublicRoute>} />
               <Route path="/legal/privacy" element={<PublicRoute allowAuthenticated><Privacy /></PublicRoute>} />
               <Route path="/legal/mentions" element={<PublicRoute allowAuthenticated><Mentions /></PublicRoute>} />
