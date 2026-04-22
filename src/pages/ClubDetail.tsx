@@ -22,21 +22,32 @@ const ClubDetail = () => {
             if (!id) return;
             try {
                 setLoading(true);
-                // Fetch organization
-                const { data: org, error: orgError } = await supabase
+
+                // Try slug first (SEO), fallback to UUID
+                let { data: org, error: orgError } = await supabase
                     .from('organizations')
                     .select('*')
-                    .eq('id', id)
+                    .eq('slug', id)
                     .single();
+
+                if (orgError || !org) {
+                    const result = await supabase
+                        .from('organizations')
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+                    org = result.data;
+                    orgError = result.error;
+                }
 
                 if (orgError) throw orgError;
                 setClub(org);
 
-                // Fetch published events for this org
+                // Fetch published events for this org (using real UUID)
                 const { data: events, error: eventsError } = await supabase
                     .from('events')
                     .select('*, ticket_types(price_cents)')
-                    .eq('organization_id', id)
+                    .eq('organization_id', org.id)
                     .eq('status', 'published')
                     .gte('starts_at', new Date().toISOString())
                     .order('starts_at', { ascending: true });
