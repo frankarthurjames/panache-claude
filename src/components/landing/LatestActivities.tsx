@@ -37,7 +37,8 @@ export const LatestActivities = () => {
             venue,
             images,
             organization:organizations(name),
-            ticket_types(price_cents)
+            ticket_types(price_cents),
+            sports(name)
           `)
                     .eq('status', 'published')
                     .gte('starts_at', new Date().toISOString())
@@ -92,8 +93,7 @@ export const LatestActivities = () => {
                             ? (hasMultiplePrices ? `Dès ${minPrice.toFixed(0)}€` : `${minPrice.toFixed(0)}€`)
                             : 'Gratuit';
 
-                        const sportMatch = activity.title.match(/^\[(.*?)\]/);
-                        const tag = sportMatch ? sportMatch[1] : (activity.organization?.name || "Événement");
+                        const tag = (activity.sports?.name || 'Événement').toUpperCase();
 
                         return (
                             <EventCard
