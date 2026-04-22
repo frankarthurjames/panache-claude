@@ -85,14 +85,31 @@ const EventDetail = () => {
           setOrgEventsCount(count ?? 0);
         }
 
-        // Fetch nearby events
-        const { data: nearby } = await supabase
+        // Fetch nearby events: same city first, fallback to any city
+        const nearbyBase = supabase
           .from('events')
-          .select('*')
+          .select('id, title, city, starts_at, images, ticket_types(price_cents)')
+          .eq('status', 'published')
           .neq('id', id)
+          .gte('starts_at', new Date().toISOString())
+          .order('starts_at', { ascending: true })
           .limit(3);
 
-        setNearbyEvents(nearby || []);
+        const { data: nearby } = await nearbyBase.eq('city', data.city || '');
+
+        if (nearby && nearby.length > 0) {
+          setNearbyEvents(nearby);
+        } else {
+          const { data: fallback } = await supabase
+            .from('events')
+            .select('id, title, city, starts_at, images, ticket_types(price_cents)')
+            .eq('status', 'published')
+            .neq('id', id)
+            .gte('starts_at', new Date().toISOString())
+            .order('starts_at', { ascending: true })
+            .limit(3);
+          setNearbyEvents(fallback || []);
+        }
 
       } catch (err) {
         console.error(err);
