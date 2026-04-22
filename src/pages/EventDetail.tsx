@@ -35,6 +35,7 @@ const EventDetail = () => {
   const [loading, setLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<any[]>([]);
   const [copied, setCopied] = useState(false);
+  const [orgEventsCount, setOrgEventsCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -44,18 +45,21 @@ const EventDetail = () => {
         const { data, error } = await supabase
           .from('events')
           .select(`
-            *, 
-            organizations ( 
-              name, 
-              website, 
-              address, 
-              billing_email,
-              billing_country 
-            ),
-            ticket_types ( 
+            *,
+            organizations (
               id,
               name,
-              price_cents, 
+              logo_url,
+              slug,
+              website,
+              address,
+              billing_email,
+              billing_country
+            ),
+            ticket_types (
+              id,
+              name,
+              price_cents,
               currency,
               quantity,
               max_per_order
@@ -71,7 +75,17 @@ const EventDetail = () => {
         if (error) throw error;
         setEvent(data);
 
-        // Fetch nearby events (mock logic: just fetch 3 other events)
+        // Fetch published events count for this organization
+        if (data?.organization_id) {
+          const { count } = await supabase
+            .from('events')
+            .select('id', { count: 'exact' })
+            .eq('organization_id', data.organization_id)
+            .eq('status', 'published');
+          setOrgEventsCount(count ?? 0);
+        }
+
+        // Fetch nearby events
         const { data: nearby } = await supabase
           .from('events')
           .select('*')
@@ -385,6 +399,35 @@ const EventDetail = () => {
                   {organization?.billing_email && (
                     <div className="pt-2 text-center text-[11px] text-gray-400">
                       Besoin d'aide ? <a href={`mailto:${organization.billing_email}`} className="underline hover:text-orange-500">Contactez l'organisateur</a>
+                    </div>
+                  )}
+
+                  {/* Organisation card */}
+                  {organization && (
+                    <div className="pt-4 border-t border-gray-100">
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Organisateur</p>
+                      <Link
+                        to={`/clubs/${organization.slug || organization.id}`}
+                        className="flex items-center gap-3 group"
+                      >
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
+                          {organization.logo_url ? (
+                            <img src={organization.logo_url} alt={organization.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold text-sm">
+                              {organization.name?.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-sm group-hover:text-orange-500 transition-colors truncate">
+                            {organization.name}
+                          </p>
+                          {orgEventsCount > 0 && (
+                            <p className="text-xs text-gray-400">{orgEventsCount} événement{orgEventsCount > 1 ? 's' : ''} publié{orgEventsCount > 1 ? 's' : ''}</p>
+                          )}
+                        </div>
+                      </Link>
                     </div>
                   )}
                 </div>
