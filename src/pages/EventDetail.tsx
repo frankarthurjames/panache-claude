@@ -85,14 +85,37 @@ const EventDetail = () => {
           setOrgEventsCount(count ?? 0);
         }
 
-        // Fetch nearby events
-        const { data: nearby } = await supabase
+        // Fetch nearby events (Haversine if GPS available, else same city)
+        const baseQuery = supabase
           .from('events')
-          .select('*')
+          .select('*, ticket_types(price_cents)')
           .neq('id', id)
-          .limit(3);
+          .eq('status', 'published')
+          .gte('starts_at', new Date().toISOString())
+          .order('starts_at', { ascending: true });
 
-        setNearbyEvents(nearby || []);
+        if (data.latitude && data.longitude) {
+          const { data: candidates } = await baseQuery.limit(100);
+          const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2
+              + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          };
+          const filtered = (candidates || [])
+            .filter((e: any) => e.latitude && e.longitude
+              && haversine(data.latitude, data.longitude, e.latitude, e.longitude) <= 50)
+            .slice(0, 3);
+          setNearbyEvents(filtered);
+        } else if (data.city) {
+          const { data: nearby } = await baseQuery.eq('city', data.city).limit(3);
+          setNearbyEvents(nearby || []);
+        } else {
+          const { data: nearby } = await baseQuery.limit(3);
+          setNearbyEvents(nearby || []);
+        }
 
       } catch (err) {
         console.error(err);

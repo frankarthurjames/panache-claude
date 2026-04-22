@@ -1,4 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+
+declare global {
+  interface Window { google: any; }
+}
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,6 +59,8 @@ const CreateEvent = () => {
     endsAt: null as Date | null,
     venue: "",
     city: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
     capacity: "",
     // Step 3: Types de billets
     ticketTypes: [
@@ -145,6 +151,60 @@ const CreateEvent = () => {
     };
     fetchSports();
   }, []);
+
+  const venueInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (currentStep !== 2) return;
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) return;
+
+    const initAutocomplete = () => {
+      if (!venueInputRef.current || !window.google?.maps?.places) return;
+      const ac = new window.google.maps.places.Autocomplete(venueInputRef.current, {
+        types: ['establishment', 'geocode'],
+        fields: ['geometry', 'address_components', 'name'],
+      });
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace();
+        if (!place.geometry?.location) return;
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const cityComp = place.address_components?.find((c: any) =>
+          c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+        );
+        setFormData(prev => ({
+          ...prev,
+          latitude: lat,
+          longitude: lng,
+          ...(cityComp ? { city: cityComp.long_name } : {}),
+        }));
+      });
+      autocompleteRef.current = ac;
+    };
+
+    if (window.google?.maps?.places) {
+      initAutocomplete();
+      return;
+    }
+
+    const scriptId = 'google-maps-places-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+      script.async = true;
+      script.onload = initAutocomplete;
+      document.head.appendChild(script);
+    }
+
+    return () => {
+      if (autocompleteRef.current && window.google?.maps?.event) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [currentStep]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -245,7 +305,9 @@ const CreateEvent = () => {
         organization_id: orgId,
         sport_id: formData.sportId || null,
         images: formData.images,
-        status: formData.status
+        status: formData.status,
+        latitude: formData.latitude ?? null,
+        longitude: formData.longitude ?? null,
       };
 
       const { data: event, error: eventError } = await supabase
@@ -431,10 +493,18 @@ const CreateEvent = () => {
               <Label htmlFor="venue">Lieu de l'événement *</Label>
               <Input
                 id="venue"
+                ref={venueInputRef}
                 value={formData.venue}
-                onChange={(e) => handleInputChange("venue", e.target.value)}
-                placeholder="Ex: Gymnase Jean Moulin"
+                onChange={(e) => {
+                  handleInputChange("venue", e.target.value);
+                  // Reset GPS if user types manually
+                  setFormData(prev => ({ ...prev, latitude: null, longitude: null }));
+                }}
+                placeholder="Ex: Gymnase Jean Moulin, Lyon"
               />
+              <p className="text-sm text-muted-foreground">
+                Saisissez l'adresse complète pour activer la géolocalisation
+              </p>
             </div>
 
             <div className="space-y-2">
