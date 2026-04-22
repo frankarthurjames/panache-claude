@@ -24,7 +24,7 @@ export function OnboardingBanner({ userName, hasOrganization, nbEvents, accountC
     setDismissed(true);
   };
 
-  const ctaHref = hasOrganization ? '/dashboard/organizations/new' : '/dashboard/organizations/new';
+  const ctaHref = hasOrganization ? '/dashboard/events/create' : '/dashboard/organizations/new';
   const ctaLabel = hasOrganization ? 'Créer mon premier événement →' : 'Commencer →';
 
   return (
