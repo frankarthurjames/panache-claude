@@ -85,36 +85,30 @@ const EventDetail = () => {
           setOrgEventsCount(count ?? 0);
         }
 
-        // Fetch nearby events (Haversine if GPS available, else same city)
-        const baseQuery = supabase
+        // Fetch nearby events: same city first, fallback to any city
+        const nearbyBase = supabase
           .from('events')
-          .select('*, ticket_types(price_cents)')
-          .neq('id', id)
+          .select('id, title, city, starts_at, images, ticket_types(price_cents)')
           .eq('status', 'published')
+          .neq('id', id)
           .gte('starts_at', new Date().toISOString())
-          .order('starts_at', { ascending: true });
+          .order('starts_at', { ascending: true })
+          .limit(3);
 
-        if (data.latitude && data.longitude) {
-          const { data: candidates } = await baseQuery.limit(100);
-          const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) ** 2
-              + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          };
-          const filtered = (candidates || [])
-            .filter((e: any) => e.latitude && e.longitude
-              && haversine(data.latitude, data.longitude, e.latitude, e.longitude) <= 50)
-            .slice(0, 3);
-          setNearbyEvents(filtered);
-        } else if (data.city) {
-          const { data: nearby } = await baseQuery.eq('city', data.city).limit(3);
-          setNearbyEvents(nearby || []);
+        const { data: nearby } = await nearbyBase.eq('city', data.city || '');
+
+        if (nearby && nearby.length > 0) {
+          setNearbyEvents(nearby);
         } else {
-          const { data: nearby } = await baseQuery.limit(3);
-          setNearbyEvents(nearby || []);
+          const { data: fallback } = await supabase
+            .from('events')
+            .select('id, title, city, starts_at, images, ticket_types(price_cents)')
+            .eq('status', 'published')
+            .neq('id', id)
+            .gte('starts_at', new Date().toISOString())
+            .order('starts_at', { ascending: true })
+            .limit(3);
+          setNearbyEvents(fallback || []);
         }
 
       } catch (err) {
