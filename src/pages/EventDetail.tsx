@@ -188,7 +188,7 @@ const EventDetail = () => {
           style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}
         />
 
-        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center text-white pb-20">
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center text-white pb-20 pt-16 sm:pt-0">
           {event.title.match(/^\[(.*?)\]/) && (
             <Badge className="w-fit mb-4 bg-orange-500 hover:bg-orange-600 text-white border-0 py-1 px-4 text-sm font-bold rounded-full shadow-lg">
               {event.title.match(/^\[(.*?)\]/)?.[1]}
