@@ -13,6 +13,7 @@ import {
   Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 import {
   Carousel,
@@ -31,6 +32,7 @@ import EventCheckout from "@/components/EventCheckout";
 
 const EventDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<any[]>([]);
@@ -54,7 +56,8 @@ const EventDetail = () => {
               website,
               address,
               billing_email,
-              billing_country
+              billing_country,
+              created_by_user_id
             ),
             ticket_types (
               id,
@@ -138,6 +141,26 @@ const EventDetail = () => {
     : null;
 
   const organization = event.organizations;
+  const showClaimBanner = !user || user.id !== organization?.created_by_user_id;
+
+  const ClaimBanner = () => (
+    <div className="border border-orange-200 bg-orange-50 rounded-xl p-4 mt-6 flex items-center justify-between gap-4">
+      <div>
+        <p className="font-semibold text-gray-900 text-sm">
+          Vous êtes l'organisateur de cet événement ?
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          Personnalisez cette page et donnez plus de visibilité à votre événement.
+        </p>
+      </div>
+      <a
+        href={`/claim-event/${event.id}`}
+        className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium px-4 py-2 rounded-full whitespace-nowrap transition-colors flex-shrink-0"
+      >
+        Revendiquer →
+      </a>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -271,6 +294,7 @@ const EventDetail = () => {
                   </div>
                 </div>
               )}
+              {showClaimBanner && <ClaimBanner />}
             </div>
           </div>
 
@@ -299,6 +323,7 @@ const EventDetail = () => {
                 </div>
               </div>
             )}
+            {showClaimBanner && <ClaimBanner />}
           </div>
 
           {/* Right Column: Floating Details Card */}

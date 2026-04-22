@@ -70,6 +70,10 @@ serve(async (req) => {
                 subject = `Votre reçu pour ${params.event_title}`;
                 // Fallback or specific template for invoice
                 break;
+            case "raw":
+                htmlContent = params.htmlContent;
+                subject = params.subject;
+                break;
             default:
                 throw new Error(`Template ${templateKey} not found`);
         }
