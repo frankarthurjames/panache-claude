@@ -35,15 +35,26 @@ const CalendarPage = () => {
         (data || []).map((e: any) => e.organization_id).filter(Boolean)
       )];
 
-      const { data: orgs } = orgIds.length
-        ? await supabase.from("organizations").select("id, email, website").in("id", orgIds)
-        : { data: [] };
+      const sportIds = [...new Set(
+        (data || []).map((e: any) => e.sport_id).filter(Boolean)
+      )];
+
+      const [{ data: orgs }, { data: sports }] = await Promise.all([
+        orgIds.length
+          ? supabase.from("organizations").select("id, email, website").in("id", orgIds)
+          : Promise.resolve({ data: [] }),
+        sportIds.length
+          ? supabase.from("sports" as any).select("id, name, slug").in("id", sportIds)
+          : Promise.resolve({ data: [] }),
+      ]);
 
       const orgsMap = Object.fromEntries((orgs || []).map((o: any) => [o.id, o]));
+      const sportsMap = Object.fromEntries((sports as any[] || []).map((s: any) => [s.id, s]));
 
       const enriched = (data || []).map((e: any) => ({
         ...e,
         organization: orgsMap[e.organization_id] || null,
+        sport: sportsMap[e.sport_id] || null,
       }));
 
       setEvents(enriched);
@@ -73,7 +84,13 @@ const CalendarPage = () => {
                 })}
               </p>
               <p className="font-bold text-gray-900">{event.title}</p>
-              <p className="text-sm text-gray-500">{event.city}</p>
+              <p className="text-sm text-gray-500">
+                {event.sport?.name && (
+                  <span className="text-orange-500 font-medium mr-2">{event.sport.name}</span>
+                )}
+                {event.sport?.name && event.city && <span className="mr-2">·</span>}
+                {event.city}
+              </p>
             </div>
 
             <div className="flex flex-col gap-1.5 flex-shrink-0 items-end">
