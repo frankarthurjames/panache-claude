@@ -70,7 +70,14 @@ const Events = () => {
 
         if (error) throw error;
 
-        const formatted = eventsData?.map(event => {
+        const completeEvents = (eventsData || []).filter(e =>
+          e.description &&
+          e.description.trim().length >= 50 &&
+          e.sport_id &&
+          e.city
+        );
+
+        const formatted = completeEvents.map(event => {
           const minPrice = event.ticket_types?.length > 0
             ? Math.min(...event.ticket_types.map((t: any) => t.price_cents))
             : 0;

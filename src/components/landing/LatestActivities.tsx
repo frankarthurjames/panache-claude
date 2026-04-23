@@ -36,6 +36,7 @@ export const LatestActivities = () => {
             city,
             venue,
             images,
+            description,
             organization:organizations(name),
             ticket_types(price_cents),
             sports(name)
@@ -43,10 +44,13 @@ export const LatestActivities = () => {
                     .eq('status', 'published')
                     .gte('starts_at', new Date().toISOString())
                     .order('created_at', { ascending: false })
-                    .limit(6);
+                    .limit(20);
 
                 if (error) throw error;
-                setActivities(data || []);
+                const filtered = (data || [])
+                    .filter(e => e.description && e.description.trim().length >= 50)
+                    .slice(0, 6);
+                setActivities(filtered);
             } catch (error) {
                 console.error("Error fetching events:", error);
             } finally {
