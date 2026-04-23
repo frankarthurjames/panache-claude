@@ -10,7 +10,15 @@ import { EventCard } from "@/components/EventCard";
 import {
   MapPin,
   Globe,
-  Loader2
+  Loader2,
+  Users,
+  BarChart2,
+  Building2,
+  Car,
+  Bus,
+  Train,
+  Accessibility,
+  Clock
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -368,6 +376,55 @@ const EventDetail = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Détails pratiques */}
+                  {(event.public_type || event.level || event.venue_type ||
+                    event.transport_car || event.transport_public || event.transport_train ||
+                    event.accessibility_pmr !== undefined || event.registration_deadline) && (
+                    <div className="border border-gray-100 rounded-2xl p-5">
+                      <h2 className="text-base font-bold text-gray-900 mb-4">Détails pratiques</h2>
+                      <div className="space-y-3 text-sm text-gray-700">
+                        {event.public_type && (
+                          <div className="flex items-center gap-3">
+                            <Users className="h-4 w-4 text-orange-500 shrink-0" />
+                            <span>{event.public_type}</span>
+                          </div>
+                        )}
+                        {event.level && (
+                          <div className="flex items-center gap-3">
+                            <BarChart2 className="h-4 w-4 text-orange-500 shrink-0" />
+                            <span>{event.level}</span>
+                          </div>
+                        )}
+                        {event.venue_type && (
+                          <div className="flex items-center gap-3">
+                            <Building2 className="h-4 w-4 text-orange-500 shrink-0" />
+                            <span>{event.venue_type}</span>
+                          </div>
+                        )}
+                        {(event.transport_car || event.transport_public || event.transport_train) && (
+                          <div className="flex items-start gap-3 pt-3 border-t border-gray-100">
+                            <Car className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
+                            <div className="flex flex-wrap gap-2">
+                              {event.transport_car && <span className="flex items-center gap-1"><Car className="h-3 w-3" /> Voiture</span>}
+                              {event.transport_public && <span className="flex items-center gap-1"><Bus className="h-3 w-3" /> Transport en commun</span>}
+                              {event.transport_train && <span className="flex items-center gap-1"><Train className="h-3 w-3" /> Train</span>}
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                          <Accessibility className="h-4 w-4 text-orange-500 shrink-0" />
+                          <span>Accès PMR : {event.accessibility_pmr ? 'Oui' : 'Non'}</span>
+                        </div>
+                        {event.registration_deadline && (
+                          <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                            <Clock className="h-4 w-4 text-orange-500 shrink-0" />
+                            <span>Inscription avant le {new Date(event.registration_deadline).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Tickets List */}
                   <div className="space-y-4">

@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ImageUpload";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -62,6 +63,15 @@ const CreateEvent = () => {
     latitude: null as number | null,
     longitude: null as number | null,
     capacity: "",
+    // Step 2 extra: Détails pratiques
+    public_type: "",
+    level: "",
+    venue_type: "",
+    transport_car: false,
+    transport_public: false,
+    transport_train: false,
+    accessibility_pmr: false,
+    registration_deadline: "",
     // Step 3: Types de billets
     ticketTypes: [
       {
@@ -308,6 +318,14 @@ const CreateEvent = () => {
         status: formData.status,
         latitude: formData.latitude ?? null,
         longitude: formData.longitude ?? null,
+        public_type: formData.public_type || null,
+        level: formData.level || null,
+        venue_type: formData.venue_type || null,
+        transport_car: formData.transport_car,
+        transport_public: formData.transport_public,
+        transport_train: formData.transport_train,
+        accessibility_pmr: formData.accessibility_pmr,
+        registration_deadline: formData.registration_deadline || null,
       };
 
       const { data: event, error: eventError } = await supabase
@@ -529,6 +547,107 @@ const CreateEvent = () => {
               <p className="text-sm text-muted-foreground">
                 Laissez vide pour une capacité illimitée
               </p>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100">
+              <p className="text-sm font-semibold text-gray-700 mb-4">Détails pratiques</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label htmlFor="public_type">Public cible</Label>
+                  <Select value={formData.public_type} onValueChange={(v) => handleInputChange("public_type", v)}>
+                    <SelectTrigger id="public_type">
+                      <SelectValue placeholder="Sélectionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Tout public">Tout public</SelectItem>
+                      <SelectItem value="Adultes">Adultes</SelectItem>
+                      <SelectItem value="Enfants">Enfants</SelectItem>
+                      <SelectItem value="Seniors">Seniors</SelectItem>
+                      <SelectItem value="Famille">Famille</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="level">Niveau</Label>
+                  <Select value={formData.level} onValueChange={(v) => handleInputChange("level", v)}>
+                    <SelectTrigger id="level">
+                      <SelectValue placeholder="Sélectionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Débutant">Débutant</SelectItem>
+                      <SelectItem value="Intermédiaire">Intermédiaire</SelectItem>
+                      <SelectItem value="Confirmé">Confirmé</SelectItem>
+                      <SelectItem value="Élite">Élite</SelectItem>
+                      <SelectItem value="Tous niveaux">Tous niveaux</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="venue_type">Type de site</Label>
+                  <Select value={formData.venue_type} onValueChange={(v) => handleInputChange("venue_type", v)}>
+                    <SelectTrigger id="venue_type">
+                      <SelectValue placeholder="Sélectionner..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Intérieur">Intérieur</SelectItem>
+                      <SelectItem value="Extérieur">Extérieur</SelectItem>
+                      <SelectItem value="Mixte">Mixte</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-4">
+                <Label>Pour venir</Label>
+                <div className="flex flex-wrap gap-6">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="transport_car"
+                      checked={formData.transport_car}
+                      onCheckedChange={(v) => handleInputChange("transport_car", !!v)}
+                    />
+                    <label htmlFor="transport_car" className="text-sm cursor-pointer">Voiture</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="transport_public"
+                      checked={formData.transport_public}
+                      onCheckedChange={(v) => handleInputChange("transport_public", !!v)}
+                    />
+                    <label htmlFor="transport_public" className="text-sm cursor-pointer">Transport en commun</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="transport_train"
+                      checked={formData.transport_train}
+                      onCheckedChange={(v) => handleInputChange("transport_train", !!v)}
+                    />
+                    <label htmlFor="transport_train" className="text-sm cursor-pointer">Train</label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-100 pt-4 mb-4 flex items-center gap-2">
+                <Checkbox
+                  id="accessibility_pmr"
+                  checked={formData.accessibility_pmr}
+                  onCheckedChange={(v) => handleInputChange("accessibility_pmr", !!v)}
+                />
+                <label htmlFor="accessibility_pmr" className="text-sm cursor-pointer">Accès PMR (personnes à mobilité réduite)</label>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="registration_deadline">Date limite d'inscription</Label>
+                <Input
+                  id="registration_deadline"
+                  type="date"
+                  value={formData.registration_deadline}
+                  onChange={(e) => handleInputChange("registration_deadline", e.target.value)}
+                />
+              </div>
             </div>
           </div>
         );
