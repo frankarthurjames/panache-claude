@@ -1,28 +1,14 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  CreditCard,
-  Shield,
-  Trash2,
-  Upload,
-  ExternalLink
-} from "lucide-react";
+import { Mail, Phone, Shield, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ImageUpload } from "@/components/ImageUpload";
 
 const Settings = () => {
   const { orgId } = useParams();
@@ -34,163 +20,102 @@ const Settings = () => {
     connected: false,
     details_submitted: false,
     charges_enabled: false,
-    business_profile: null
+    business_profile: null as any
   });
 
   const [orgData, setOrgData] = useState({
-    name: "",
-    description: "",
-    website: "",
+    siretNumber: "",
+    billingCountry: "FR",
     email: "",
     phone: "",
     address: "",
-    siretNumber: "",
+    website: "",
+    name: "",
     billingEmail: "",
-    logo: null,
-    notifications: {
-      newRegistration: true,
-      paymentReceived: true,
-      eventReminder: false,
-      weeklyReport: true
-    }
   });
 
-  // Charger les données de l'organisation
   useEffect(() => {
     if (!orgId) return;
-
-    const loadOrganizationData = async () => {
+    const load = async () => {
       try {
         const { data, error } = await supabase
           .from('organizations')
           .select('*')
           .eq('id', orgId)
           .single();
-
         if (error) throw error;
-
         setOrgData({
-          name: data.name || "",
-          description: data.description || "",
-          website: data.website || "",
+          siretNumber: data.siret_number || "",
+          billingCountry: data.billing_country || "FR",
           email: data.billing_email || "",
           phone: data.phone || "",
           address: data.address || "",
-          siretNumber: data.siret_number || "",
+          website: data.website || "",
+          name: data.name || "",
           billingEmail: data.billing_email || "",
-          logo: data.logo_url,
-          notifications: {
-            newRegistration: true,
-            paymentReceived: true,
-            eventReminder: false,
-            weeklyReport: true
-          }
         });
-
-        // Vérifier le statut Stripe
         await checkStripeStatus();
-      } catch (error) {
-        console.error('Error loading organization:', error);
-        toast.error("Erreur lors du chargement des données");
+      } catch {
+        toast.error("Erreur lors du chargement");
       }
     };
-
-    loadOrganizationData();
+    load();
   }, [orgId]);
 
-  // Gérer le retour de Stripe Connect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('success');
-    const refresh = urlParams.get('refresh');
-
-    if (success === 'true') {
+    if (urlParams.get('success') === 'true') {
       toast.success("Configuration Stripe terminée avec succès !");
-      // Vérifier le statut après un court délai
-      setTimeout(() => {
-        checkStripeStatus();
-      }, 1000);
-      // Nettoyer l'URL et rediriger proprement
+      setTimeout(() => checkStripeStatus(), 1000);
       navigate(`/dashboard/org/${orgId}/settings`, { replace: true });
-    } else if (refresh === 'true') {
-      // Rafraîchir le statut
+    } else if (urlParams.get('refresh') === 'true') {
       checkStripeStatus();
-      // Nettoyer l'URL et rediriger proprement
       navigate(`/dashboard/org/${orgId}/settings`, { replace: true });
     }
   }, []);
 
   const checkStripeStatus = async () => {
     if (!user || !orgId) return;
-
     try {
       const { data, error } = await supabase.functions.invoke('check-connect-status', {
         body: { organizationId: orgId }
       });
-
       if (error) throw error;
-
       setStripeStatus(data);
-    } catch (error) {
-      console.error('Error checking Stripe status:', error);
+    } catch {
       setStripeStatus({ connected: false, details_submitted: false, charges_enabled: false, business_profile: null });
     }
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setOrgData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleNotificationChange = (field: string, value: boolean) => {
-    setOrgData(prev => ({
-      ...prev,
-      notifications: { ...prev.notifications, [field]: value }
-    }));
-  };
-
   const handleSave = async () => {
     if (!orgId || !user) return;
-
     setIsLoading(true);
     try {
-      // First, check if user is owner of the organization
-      const { data: memberData, error: memberError } = await supabase
+      const { error: memberError } = await supabase
         .from('organization_members')
         .select('role')
         .eq('organization_id', orgId)
         .eq('user_id', user.id)
         .eq('role', 'owner')
         .single();
-
-      if (memberError || !memberData) {
-        console.error('User is not owner of organization:', memberError);
+      if (memberError) {
         toast.error("Vous n'avez pas les droits pour modifier cette organisation");
         return;
       }
-
-      // Update the organization
       const { error } = await supabase
         .from('organizations')
         .update({
-          name: orgData.name,
-          description: orgData.description,
-          website: orgData.website,
-          phone: orgData.phone,
-          address: orgData.address,
-          siret_number: orgData.siretNumber,
-          billing_email: orgData.billingEmail,
-          logo_url: orgData.logo
+          siret_number: orgData.siretNumber || null,
+          billing_country: orgData.billingCountry || null,
+          billing_email: orgData.billingEmail || null,
+          phone: orgData.phone || null,
+          address: orgData.address || null,
+          website: orgData.website || null,
         })
         .eq('id', orgId);
-
-      if (error) {
-        console.error('Error updating organization:', error);
-        throw error;
-      }
-
-      toast.success("Paramètres sauvegardés avec succès !");
-    } catch (error) {
-      console.error('Error saving organization:', error);
+      if (error) throw error;
+      toast.success("Paramètres sauvegardés !");
+    } catch {
       toast.error("Erreur lors de la sauvegarde");
     } finally {
       setIsLoading(false);
@@ -199,26 +124,15 @@ const Settings = () => {
 
   const handleConnectStripe = async () => {
     if (!user || !orgId) return;
-
     setLoadingStripe(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-connect-account', {
-        body: {
-          organizationId: orgId,
-          organizationName: orgData.name,
-          organizationEmail: orgData.billingEmail || user.email
-        }
+        body: { organizationId: orgId, organizationName: orgData.name, organizationEmail: orgData.billingEmail || user.email }
       });
-
       if (error) throw error;
-
-      // Rediriger vers l'onboarding Stripe dans le même onglet
       window.location.href = data.onboardingUrl;
-      toast.success("Redirection vers Stripe...");
-    } catch (error) {
-      console.error('Error connecting Stripe:', error);
-      const errorMessage = error instanceof Error ? error.message : "Erreur lors de la connexion à Stripe";
-      toast.error(errorMessage);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la connexion à Stripe");
     } finally {
       setLoadingStripe(false);
     }
@@ -226,335 +140,171 @@ const Settings = () => {
 
   const handleDisconnectStripe = async () => {
     if (!user || !orgId) return;
-
     setLoadingStripe(true);
     try {
-      const { data, error } = await supabase.functions.invoke('disconnect-stripe', {
-        body: { organizationId: orgId }
-      });
-
+      const { error } = await supabase.functions.invoke('disconnect-stripe', { body: { organizationId: orgId } });
       if (error) throw error;
-
       setStripeStatus({ connected: false, details_submitted: false, charges_enabled: false, business_profile: null });
-      toast.success("Compte Stripe déconnecté avec succès");
-    } catch (error) {
-      console.error('Error disconnecting Stripe:', error);
+      toast.success("Compte Stripe déconnecté");
+    } catch {
       toast.error("Erreur lors de la déconnexion");
     } finally {
       setLoadingStripe(false);
     }
   };
 
-
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 max-w-2xl">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Paramètres de l'organisation</h1>
-          <p className="text-muted-foreground">
-            Gérez les informations et la configuration de votre organisation
-          </p>
+          <h1 className="text-2xl font-bold">Paramètres & facturation</h1>
+          <p className="text-muted-foreground text-sm">Informations légales, contact et paiements</p>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={isLoading}
-          className="w-full md:w-auto"
-        >
-          {isLoading ? "Sauvegarde..." : "Sauvegarder les modifications"}
+        <Button onClick={handleSave} disabled={isLoading} className="bg-orange-500 hover:bg-orange-600">
+          {isLoading ? "Sauvegarde..." : "Sauvegarder"}
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          {/* Informations générales */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                
-                Informations générales
-              </CardTitle>
-              <CardDescription>
-                Informations publiques de votre organisation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nom de l'organisation</Label>
-                <Input
-                  id="name"
-                  value={orgData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                />
-              </div>
+      {/* Informations légales */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            Informations légales
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="siretNumber">Numéro SIRET</Label>
+            <Input
+              id="siretNumber"
+              value={orgData.siretNumber}
+              onChange={(e) => setOrgData(p => ({ ...p, siretNumber: e.target.value }))}
+              maxLength={14}
+              placeholder="14 chiffres"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="billingCountry">Pays de facturation</Label>
+            <Input
+              id="billingCountry"
+              value={orgData.billingCountry}
+              onChange={(e) => setOrgData(p => ({ ...p, billingCountry: e.target.value }))}
+              placeholder="FR"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={orgData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                  rows={4}
-                />
-              </div>
+      {/* Informations de contact */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="w-5 h-5" />
+            Informations de contact
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="billingEmail">Email de contact</Label>
+            <Input
+              id="billingEmail"
+              type="email"
+              value={orgData.billingEmail}
+              onChange={(e) => setOrgData(p => ({ ...p, billingEmail: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Téléphone</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={orgData.phone}
+              onChange={(e) => setOrgData(p => ({ ...p, phone: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="address">Adresse</Label>
+            <Input
+              id="address"
+              value={orgData.address}
+              onChange={(e) => setOrgData(p => ({ ...p, address: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="website">Site web</Label>
+            <Input
+              id="website"
+              type="url"
+              value={orgData.website}
+              onChange={(e) => setOrgData(p => ({ ...p, website: e.target.value }))}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-              <div className="space-y-2">
-                <Label htmlFor="website">Site web</Label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={orgData.website}
-                  onChange={(e) => handleInputChange("website", e.target.value)}
-                />
-              </div>
+      {/* Stripe Connect */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Stripe Connect</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Statut</span>
+            <Badge variant={stripeStatus.connected && stripeStatus.charges_enabled ? "default" : "secondary"}>
+              {stripeStatus.connected && stripeStatus.charges_enabled
+                ? "Actif"
+                : stripeStatus.connected
+                ? "En cours de configuration"
+                : "Non connecté"}
+            </Badge>
+          </div>
 
-              <div className="space-y-2">
-                {/* <Label htmlFor="logo">Logo de l'organisation</Label> */}
-                <ImageUpload
-                  value={orgData.logo ? [orgData.logo] : []}
-                  onChange={(images) => handleInputChange("logo", images[0] || null)}
-                  maxImages={1}
-                  label="Logo de l'organisation"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Informations de contact */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="w-5 h-5" />
-                Informations de contact
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email principal</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={orgData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone">Téléphone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={orgData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Adresse</Label>
-                <Textarea
-                  id="address"
-                  value={orgData.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Informations légales */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Informations légales
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="siretNumber">Numéro SIRET</Label>
-                <Input
-                  id="siretNumber"
-                  value={orgData.siretNumber}
-                  onChange={(e) => handleInputChange("siretNumber", e.target.value)}
-                  maxLength={14}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="billingEmail">Email de facturation</Label>
-                <Input
-                  id="billingEmail"
-                  type="email"
-                  value={orgData.billingEmail}
-                  onChange={(e) => handleInputChange("billingEmail", e.target.value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notifications */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Notifications</CardTitle>
-              <CardDescription>
-                Configurez les notifications que vous souhaitez recevoir
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Nouvelles inscriptions</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Être notifié quand quelqu'un s'inscrit à un événement
-                  </p>
-                </div>
-                <Switch
-                  checked={orgData.notifications.newRegistration}
-                  onCheckedChange={(checked) => handleNotificationChange("newRegistration", checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Paiements reçus</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Être notifié lors de la réception d'un paiement
-                  </p>
-                </div>
-                <Switch
-                  checked={orgData.notifications.paymentReceived}
-                  onCheckedChange={(checked) => handleNotificationChange("paymentReceived", checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Rappels d'événements</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Rappels automatiques 24h avant vos événements
-                  </p>
-                </div>
-                <Switch
-                  checked={orgData.notifications.eventReminder}
-                  onCheckedChange={(checked) => handleNotificationChange("eventReminder", checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Rapport hebdomadaire</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Résumé hebdomadaire de vos performances
-                  </p>
-                </div>
-                <Switch
-                  checked={orgData.notifications.weeklyReport}
-                  onCheckedChange={(checked) => handleNotificationChange("weeklyReport", checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Stripe Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                Stripe
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>Status</span>
-                <Badge variant={stripeStatus.connected && stripeStatus.charges_enabled ? "default" : "secondary"}>
-                  {stripeStatus.connected && stripeStatus.charges_enabled ? "Actif" :
-                    stripeStatus.connected ? "En cours de configuration" : "Non connecté"}
-                </Badge>
-              </div>
-
-              {stripeStatus.connected ? (
-                <div className="space-y-3">
-                  {stripeStatus.charges_enabled ? (
-                    <p className="text-sm text-muted-foreground">
-                      Votre compte Stripe est connecté et peut recevoir des paiements.
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Configuration en cours. Veuillez finaliser votre onboarding Stripe.
-                    </p>
-                  )}
-
-                  {stripeStatus.business_profile?.name && (
-                    <p className="text-sm font-medium">
-                      {stripeStatus.business_profile.name}
-                    </p>
-                  )}
-
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open('https://dashboard.stripe.com/', '_blank')}
-                    >
-                      
-                      Dashboard Stripe
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={checkStripeStatus}
-                      disabled={loadingStripe}
-                    >
-                      Actualiser le statut
-                    </Button>
-                    {!stripeStatus.charges_enabled && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleConnectStripe}
-                        disabled={loadingStripe}
-                      >
-                        Finaliser la configuration
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive"
-                      onClick={handleDisconnectStripe}
-                      disabled={loadingStripe}
-                    >
-                      {loadingStripe ? "Déconnexion..." : "Déconnecter"}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Connectez Stripe pour recevoir des paiements pour vos événements.
-                  </p>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={handleConnectStripe}
-                    disabled={loadingStripe || !orgData.name || !orgData.billingEmail}
-                  >
-                    
-                    {loadingStripe ? "Connexion..." : "Connecter Stripe"}
-                  </Button>
-                  {(!orgData.name || !orgData.billingEmail) && (
-                    <p className="text-xs text-muted-foreground">
-                      Veuillez d'abord renseigner le nom et l'email de facturation
-                    </p>
-                  )}
-                </div>
+          {stripeStatus.connected ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {stripeStatus.charges_enabled
+                  ? "Votre compte Stripe est connecté et peut recevoir des paiements."
+                  : "Configuration en cours. Veuillez finaliser votre onboarding Stripe."}
+              </p>
+              {stripeStatus.business_profile?.name && (
+                <p className="text-sm font-medium">{stripeStatus.business_profile.name}</p>
               )}
-            </CardContent>
-          </Card>
-
-        </div>
-      </div>
+              <div className="flex flex-col gap-2">
+                <Button variant="outline" size="sm" onClick={() => window.open('https://dashboard.stripe.com/', '_blank')}>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Dashboard Stripe
+                </Button>
+                <Button variant="outline" size="sm" onClick={checkStripeStatus} disabled={loadingStripe}>
+                  Actualiser le statut
+                </Button>
+                {!stripeStatus.charges_enabled && (
+                  <Button variant="outline" size="sm" onClick={handleConnectStripe} disabled={loadingStripe}>
+                    Finaliser la configuration
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="text-destructive" onClick={handleDisconnectStripe} disabled={loadingStripe}>
+                  {loadingStripe ? "Déconnexion..." : "Déconnecter"}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Connectez Stripe pour recevoir des paiements pour vos événements.
+              </p>
+              <Button size="sm" className="w-full" onClick={handleConnectStripe} disabled={loadingStripe || !orgData.name || !orgData.billingEmail}>
+                {loadingStripe ? "Connexion..." : "Connecter Stripe"}
+              </Button>
+              {(!orgData.name || !orgData.billingEmail) && (
+                <p className="text-xs text-muted-foreground">
+                  Veuillez d'abord renseigner le nom et l'email de facturation
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

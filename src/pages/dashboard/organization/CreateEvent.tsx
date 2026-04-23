@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ImageUpload";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -47,6 +48,7 @@ const CreateEvent = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stripeStatus, setStripeStatus] = useState<any>(null);
   const [loadingStripe, setLoadingStripe] = useState(true);
+  const [isPaid, setIsPaid] = useState(false);
   const [sports, setSports] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     // Step 1: Informations générales
@@ -340,8 +342,8 @@ const CreateEvent = () => {
         return;
       }
 
-      // Create ticket types
-      if (formData.ticketTypes.length > 0) {
+      // Create ticket types only if event is paid
+      if (isPaid && formData.ticketTypes.length > 0) {
         const ticketTypesData = formData.ticketTypes.map(ticket => ({
           event_id: event.id,
           name: ticket.name,
@@ -655,18 +657,36 @@ const CreateEvent = () => {
       case 3:
         return (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
               <div>
-                <h3 className="text-lg font-semibold">Types de billets</h3>
-                <p className="text-sm text-muted-foreground">
-                  Définissez les différents types de billets et leurs prix
-                </p>
+                <p className="font-semibold text-gray-900">Mon événement est payant</p>
+                <p className="text-sm text-gray-500">Activez pour configurer vos billets et recevoir des paiements en ligne</p>
               </div>
-              <Button onClick={addTicketType} variant="outline" size="sm">
-
-                Ajouter un type
-              </Button>
+              <Switch
+                checked={isPaid}
+                onCheckedChange={setIsPaid}
+                className="data-[state=checked]:bg-orange-500"
+              />
             </div>
+
+            {!isPaid ? (
+              <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                <p className="text-gray-500 font-medium mb-1">Événement gratuit</p>
+                <p className="text-sm text-gray-400">Vos participants pourront s'inscrire gratuitement sans paiement.</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold">Types de billets</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Définissez les différents types de billets et leurs prix
+                    </p>
+                  </div>
+                  <Button onClick={addTicketType} variant="outline" size="sm">
+                    Ajouter un type
+                  </Button>
+                </div>
 
             <div className="space-y-4">
               {formData.ticketTypes.map((ticketType, index) => (
@@ -741,6 +761,8 @@ const CreateEvent = () => {
                 </Card>
               ))}
             </div>
+              </>
+            )}
           </div>
         );
 

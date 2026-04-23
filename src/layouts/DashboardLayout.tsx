@@ -1,7 +1,61 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation, useParams, Link } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { Logo } from "@/components/Logo";
+
+function Breadcrumb() {
+  const location = useLocation();
+  const { orgId, eventId } = useParams();
+
+  const crumbs: { label: string; path: string }[] = [];
+
+  if (location.pathname === '/dashboard') {
+    crumbs.push({ label: 'Accueil', path: '/dashboard' });
+  } else if (location.pathname.includes('/my-events')) {
+    crumbs.push({ label: 'Accueil', path: '/dashboard' });
+    crumbs.push({ label: 'Mes billets', path: '#' });
+  } else if (location.pathname.includes('/organizations')) {
+    crumbs.push({ label: 'Accueil', path: '/dashboard' });
+    crumbs.push({ label: 'Organisations', path: '#' });
+  } else if (orgId && eventId) {
+    crumbs.push({ label: 'Accueil', path: '/dashboard' });
+    crumbs.push({ label: 'Événements', path: `/dashboard/org/${orgId}/events` });
+    crumbs.push({ label: 'Modifier', path: '#' });
+  } else if (orgId) {
+    crumbs.push({ label: 'Accueil', path: '/dashboard' });
+    crumbs.push({ label: 'Mon organisation', path: `/dashboard/org/${orgId}` });
+    if (location.pathname.includes('/fiche')) {
+      crumbs.push({ label: 'Ma fiche', path: '#' });
+    } else if (location.pathname.includes('/events')) {
+      crumbs.push({ label: 'Événements', path: '#' });
+    } else if (location.pathname.includes('/tickets')) {
+      crumbs.push({ label: 'Billets', path: '#' });
+    } else if (location.pathname.includes('/settings')) {
+      crumbs.push({ label: 'Paramètres', path: '#' });
+    } else if (location.pathname.includes('/qr-validator')) {
+      crumbs.push({ label: 'Scanner QR', path: '#' });
+    }
+  }
+
+  if (crumbs.length === 0) return null;
+
+  return (
+    <nav className="flex items-center gap-2 text-sm text-gray-500 px-6 py-2 border-b border-gray-100 bg-white">
+      {crumbs.map((crumb, i) => (
+        <span key={i} className="flex items-center gap-2">
+          {i > 0 && <span className="text-gray-300">/</span>}
+          {i === crumbs.length - 1 ? (
+            <span className="text-gray-900 font-medium">{crumb.label}</span>
+          ) : (
+            <Link to={crumb.path} className="hover:text-orange-500 transition-colors">
+              {crumb.label}
+            </Link>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}
 
 export default function DashboardLayout() {
   return (
@@ -14,6 +68,8 @@ export default function DashboardLayout() {
             <Logo size="sm" />
           </div>
         </header>
+
+        <Breadcrumb />
 
         {/* Main content area */}
         <div className="flex flex-1 w-full">

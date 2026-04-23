@@ -177,8 +177,8 @@ const MyEvents = () => {
 
   return (
     <PageContainer>
-      <PageHeader 
-        title="Mes réservations" 
+      <PageHeader
+        title="Mes billets"
         description="Gérez vos réservations et téléchargez vos billets."
       />
       <div className="space-y-6 mt-6">

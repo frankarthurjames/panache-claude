@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Building2, LayoutDashboard, Settings, Calendar, CreditCard, Plus, Home, QrCode, Ticket, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Building2, LayoutDashboard, Settings, Calendar, Plus, Home, QrCode, Ticket, ArrowLeft, ShieldCheck } from "lucide-react";
 import { NavLink, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Logo } from "@/components/Logo";
@@ -28,17 +28,16 @@ import { useAuth } from "@/hooks/useAuth";
 
 const mainMenuItems = [
   { title: "Accueil", url: "/", icon: Home, exact: true },
-  { title: "Vue d'ensemble", url: "/dashboard", icon: LayoutDashboard, exact: true },
-  { title: "Mes réservations", url: "/dashboard/my-events", icon: Calendar, exact: true },
+  { title: "Mes billets", url: "/dashboard/my-events", icon: Calendar, exact: true },
   { title: "Organisations", url: "/dashboard/organizations", icon: Building2 },
 ];
 
 const orgMenuItems = [
   { title: "Tableau de bord", url: "/dashboard/org/:orgId", icon: LayoutDashboard },
+  { title: "Ma fiche", url: "/dashboard/org/:orgId/fiche", icon: Building2 },
   { title: "Événements", url: "/dashboard/org/:orgId/events", icon: Calendar },
   { title: "Billets", url: "/dashboard/org/:orgId/tickets", icon: Ticket },
   { title: "Scanner QR", url: "/dashboard/org/:orgId/qr-validator", icon: QrCode },
-  { title: "Intégrations", url: "/dashboard/org/:orgId/integrations", icon: CreditCard },
   { title: "Paramètres", url: "/dashboard/org/:orgId/settings", icon: Settings },
 ];
 

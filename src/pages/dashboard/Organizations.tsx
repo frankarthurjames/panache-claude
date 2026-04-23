@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, Users, Calendar, TrendingUp, Activity, Settings } from "lucide-react";
+import { Plus, Building2, Users, Calendar, TrendingUp, Activity, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
@@ -165,8 +165,8 @@ const Organizations = () => {
                     <Link to={`/dashboard/org/${org.id}`}>Gérer</Link>
                   </Button>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link to={`/dashboard/org/${org.id}/settings`}>
-                      <Settings className="w-4 h-4" />
+                    <Link to={`/dashboard/org/${org.id}/fiche`}>
+                      <Pencil className="w-4 h-4" />
                     </Link>
                   </Button>
                 </div>

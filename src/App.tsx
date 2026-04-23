@@ -31,7 +31,7 @@ import QRValidator from "./pages/dashboard/organization/QRValidator";
 import Tickets from "./pages/dashboard/organization/Tickets";
 import NewOrganization from "./pages/dashboard/organizations/NewOrganization";
 import OrganizationDashboard from "./pages/dashboard/organization/OrganizationDashboard";
-import Integrations from "./pages/dashboard/organization/Integrations";
+import Fiche from "./pages/dashboard/organization/Fiche";
 import OrgEvents from "./pages/dashboard/organization/Events";
 import CreateOrgEvent from "./pages/dashboard/organization/CreateEvent";
 import Analytics from "./pages/dashboard/organization/Analytics";
@@ -96,7 +96,7 @@ const App = () => (
                 <Route path="org/:orgId/events/:eventId/edit" element={<EventEdit />} />
                 <Route path="org/:orgId/events/:eventId/analytics" element={<Analytics />} />
                 <Route path="org/:orgId/analytics" element={<Analytics />} />
-                <Route path="org/:orgId/integrations" element={<Integrations />} />
+                <Route path="org/:orgId/fiche" element={<Fiche />} />
                 <Route path="org/:orgId/settings" element={<Settings />} />
                 <Route path="admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               </Route>
