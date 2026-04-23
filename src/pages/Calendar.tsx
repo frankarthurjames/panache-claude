@@ -19,7 +19,7 @@ const CalendarPage = () => {
   const [regionFilter, setRegionFilter] = useState('');
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       try {
         const { data: rows, error } = await supabase
           .from('events')
@@ -27,31 +27,47 @@ const CalendarPage = () => {
             id, title, starts_at, ends_at,
             city, region, description, venue,
             images, website, sport_id,
-            organizations(id, name, email, website),
-            sports:sport_id(id, name, slug)
+            organization_id
           `)
           .eq('status', 'published')
           .gte('starts_at', new Date().toISOString())
           .order('starts_at', { ascending: true });
 
-        console.log('Events fetched:', rows?.length, error);
+        if (error) throw error;
 
-        if (!rows?.length) {
-          const { data: debug } = await supabase
-            .from('events')
-            .select('id, title, status, starts_at')
-            .limit(5);
-          console.log('Debug events:', debug);
-        }
+        const orgIds = [...new Set(
+          rows?.map(e => e.organization_id).filter(Boolean)
+        )];
+        const { data: orgs } = await supabase
+          .from('organizations')
+          .select('id, name, email, website')
+          .in('id', orgIds.length ? orgIds : ['00000000-0000-0000-0000-000000000000']);
 
-        setData(rows || []);
+        const sportIds = [...new Set(
+          rows?.map(e => e.sport_id).filter(Boolean)
+        )];
+        const { data: sports } = await supabase
+          .from('sports' as any)
+          .select('id, name, slug')
+          .in('id', sportIds.length ? sportIds : ['00000000-0000-0000-0000-000000000000']);
+
+        const orgsMap = Object.fromEntries((orgs || []).map(o => [o.id, o]));
+        const sportsMap = Object.fromEntries((sports as any[] || []).map(s => [s.id, s]));
+
+        const enriched = (rows || []).map(e => ({
+          ...e,
+          organizations: orgsMap[e.organization_id] || null,
+          sports: sportsMap[e.sport_id] || null,
+        }));
+
+        setData(enriched);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetch();
+    fetchData();
   }, []);
 
   const availableSports = useMemo(() =>
