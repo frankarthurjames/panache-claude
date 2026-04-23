@@ -3,58 +3,101 @@ import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const isFicheComplete = (event: any): boolean => {
+  return !!(
+    event.description &&
+    event.description.trim().length >= 50 &&
+    event.sport_id &&
+    event.city
+  );
+};
+
 const CalendarPage = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from("events")
-      .select("id, title, starts_at, city")
-      .eq("status", "published")
-      .order("starts_at", { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
-          setError(error.message);
-        } else {
-          setEvents(data || []);
-        }
+    const fetchData = async () => {
+      const { data, error } = await supabase
+        .from("events")
+        .select("id, title, starts_at, city, description, sport_id, organization_id, website, images")
+        .eq("status", "published")
+        .order("starts_at", { ascending: true });
+
+      if (error) {
+        setError(error.message);
         setLoading(false);
-      });
+        return;
+      }
+
+      const orgIds = [...new Set(
+        (data || []).map((e: any) => e.organization_id).filter(Boolean)
+      )];
+
+      const { data: orgs } = orgIds.length
+        ? await supabase.from("organizations").select("id, email, website").in("id", orgIds)
+        : { data: [] };
+
+      const orgsMap = Object.fromEntries((orgs || []).map((o: any) => [o.id, o]));
+
+      const enriched = (data || []).map((e: any) => ({
+        ...e,
+        organization: orgsMap[e.organization_id] || null,
+      }));
+
+      setEvents(enriched);
+      setLoading(false);
+    };
+
+    fetchData();
   }, []);
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 pt-28 pb-24">
-        <h1 className="text-3xl font-bold mb-8">
-          Calendrier des événements
-        </h1>
+        <h1 className="text-3xl font-bold mb-8">Calendrier des événements</h1>
         {loading && <p>Chargement...</p>}
         {error && <p className="text-red-500">Erreur : {error}</p>}
         {!loading && !error && (
-          <p className="mb-4 text-gray-500">
-            {events.length} événement(s) trouvé(s)
-          </p>
+          <p className="mb-4 text-gray-500">{events.length} événement(s) trouvé(s)</p>
         )}
         {events.map(event => (
           <div key={event.id}
-               className="py-3 border-b border-gray-100">
-            <p className="text-xs text-orange-500 font-bold">
-              {new Date(event.starts_at)
-                .toLocaleDateString('fr-FR', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
+               className="flex items-start justify-between gap-4 py-3 border-b border-gray-100">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-orange-500 font-bold uppercase mb-0.5">
+                {new Date(event.starts_at).toLocaleDateString('fr-FR', {
+                  day: 'numeric', month: 'long', year: 'numeric'
                 })}
-            </p>
-            <p className="font-bold text-gray-900">
-              {event.title}
-            </p>
-            <p className="text-sm text-gray-500">
-              {event.city}
-            </p>
+              </p>
+              <p className="font-bold text-gray-900">{event.title}</p>
+              <p className="text-sm text-gray-500">{event.city}</p>
+            </div>
+
+            <div className="flex flex-col gap-1.5 flex-shrink-0 items-end">
+              {isFicheComplete(event) && (
+                <a href={`/events/${event.id}`}
+                   className="text-xs font-medium px-3 py-1.5 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors whitespace-nowrap">
+                  Voir la fiche
+                </a>
+              )}
+              {event.organization?.email && (
+                <a href={`mailto:${event.organization.email}`}
+                   className="text-xs font-medium px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full hover:border-gray-300 transition-colors whitespace-nowrap">
+                  Contacter
+                </a>
+              )}
+              {(event.website || event.organization?.website) && (
+                <a href={event.website || event.organization?.website}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="text-xs font-medium px-3 py-1.5 border border-gray-200 text-gray-600 rounded-full hover:border-gray-300 transition-colors whitespace-nowrap">
+                  Site web
+                </a>
+              )}
+            </div>
           </div>
         ))}
       </div>
