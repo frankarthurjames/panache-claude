@@ -16,6 +16,7 @@ const CalendarPage = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sportFilter, setSportFilter] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,6 +65,18 @@ const CalendarPage = () => {
     fetchData();
   }, []);
 
+  const availableSports = Array.from(
+    new Map(
+      events
+        .filter((e: any) => e.sport)
+        .map((e: any) => [e.sport.id, e.sport])
+    ).values()
+  ).sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+  const filteredEvents = sportFilter
+    ? events.filter((e: any) => e.sport?.id === sportFilter)
+    : events;
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -72,9 +85,21 @@ const CalendarPage = () => {
         {loading && <p>Chargement...</p>}
         {error && <p className="text-red-500">Erreur : {error}</p>}
         {!loading && !error && (
-          <p className="mb-4 text-gray-500">{events.length} événement(s) trouvé(s)</p>
+          <>
+            <select
+              value={sportFilter}
+              onChange={(e) => setSportFilter(e.target.value)}
+              className="h-10 rounded-full border border-gray-200 bg-white px-4 text-sm text-gray-600 focus:outline-none focus:border-orange-300 mb-6"
+            >
+              <option value="">Tous les sports</option>
+              {availableSports.map((s: any) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            <p className="mb-4 text-gray-500">{filteredEvents.length} événement(s) trouvé(s)</p>
+          </>
         )}
-        {events.map(event => (
+        {filteredEvents.map(event => (
           <div key={event.id}
                className="flex items-start justify-between gap-4 py-3 border-b border-gray-100">
             <div className="flex-1 min-w-0">
