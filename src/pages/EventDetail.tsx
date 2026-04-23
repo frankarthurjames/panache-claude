@@ -142,6 +142,12 @@ const EventDetail = () => {
   if (!event) return <div>Événement non trouvé</div>;
 
   const eventDate = new Date(event.starts_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const eventTime = (() => {
+    const d = new Date(event.starts_at);
+    return d.getHours() !== 0 || d.getMinutes() !== 0
+      ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      : null;
+  })();
 
   // Calculate minimum price
   const minPrice = event.ticket_types && event.ticket_types.length > 0
@@ -149,7 +155,8 @@ const EventDetail = () => {
     : null;
 
   const organization = event.organizations;
-  const showClaimBanner = !user || user.id !== organization?.created_by_user_id;
+  const PANACHE_ORG_ID = '6f8c37be-e1f5-4a19-98c3-98946ea7d034';
+  const showClaimBanner = event.organization_id === PANACHE_ORG_ID;
 
   const ClaimBanner = () => (
     <div className="border border-orange-200 bg-orange-50 rounded-xl p-4 mt-6 flex items-center justify-between gap-4">
@@ -206,7 +213,7 @@ const EventDetail = () => {
             {event.title.replace(/^\[.*?\]\s*/, '')}
           </h1>
           <div className="text-xl md:text-2xl font-medium opacity-90">
-            {eventDate} | {event.city || "Lieu à confirmer"}
+            {eventDate}{eventTime ? ` · ${eventTime}` : ''} | {event.city || "Lieu à confirmer"}
           </div>
 
           <div className="flex flex-wrap gap-3 mt-6">
@@ -249,6 +256,78 @@ const EventDetail = () => {
             <div className="prose max-w-none text-gray-600 leading-relaxed mb-12 whitespace-pre-wrap">
               {event.description || "Aucune description disponible."}
             </div>
+
+            {/* Détails pratiques */}
+            {(event.public_type || event.level || event.venue_type ||
+              event.transport_car || event.transport_public || event.transport_train ||
+              event.accessibility_pmr === true || event.registration_deadline) && (
+              <div className="border border-gray-100 rounded-2xl p-5 mt-8">
+                <h2 className="text-lg font-bold text-gray-900 mb-4">Détails pratiques</h2>
+                <div className="space-y-3 text-sm text-gray-700">
+                  {event.public_type && (
+                    <div className="flex items-center gap-3">
+                      <Users className="h-4 w-4 text-orange-500 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">Public</p>
+                        <p className="font-medium">{event.public_type}</p>
+                      </div>
+                    </div>
+                  )}
+                  {event.level && (
+                    <div className="flex items-center gap-3">
+                      <BarChart2 className="h-4 w-4 text-orange-500 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">Niveau</p>
+                        <p className="font-medium">{event.level}</p>
+                      </div>
+                    </div>
+                  )}
+                  {event.venue_type && (
+                    <div className="flex items-center gap-3">
+                      <Building2 className="h-4 w-4 text-orange-500 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">Type de lieu</p>
+                        <p className="font-medium">{event.venue_type}</p>
+                      </div>
+                    </div>
+                  )}
+                  {(event.transport_car || event.transport_public || event.transport_train) && (
+                    <div className="flex items-start gap-3 pt-3 border-t border-gray-100">
+                      <Car className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Pour venir</p>
+                        <p className="font-medium">
+                          {[
+                            event.transport_car && 'Voiture',
+                            event.transport_public && 'Transport en commun',
+                            event.transport_train && 'Train',
+                          ].filter(Boolean).join(' · ')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {event.accessibility_pmr === true && (
+                    <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                      <Accessibility className="h-4 w-4 text-orange-500 shrink-0" />
+                      <p className="font-medium">Accès PMR disponible</p>
+                    </div>
+                  )}
+                  {event.registration_deadline && (
+                    <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                      <Clock className="h-4 w-4 text-orange-500 shrink-0" />
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase tracking-wide">Limite d'inscription</p>
+                        <p className="font-medium">
+                          {new Date(event.registration_deadline).toLocaleDateString('fr-FR', {
+                            day: 'numeric', month: 'long', year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Carousel Section */}
             {event.images && event.images.length > 1 && (
@@ -302,7 +381,6 @@ const EventDetail = () => {
                   </div>
                 </div>
               )}
-              {showClaimBanner && <ClaimBanner />}
             </div>
           </div>
 
@@ -331,7 +409,6 @@ const EventDetail = () => {
                 </div>
               </div>
             )}
-            {showClaimBanner && <ClaimBanner />}
           </div>
 
           {/* Right Column: Floating Details Card */}
@@ -366,65 +443,7 @@ const EventDetail = () => {
                         </div>
                       </div>
                     )}
-
-                    {organization?.billing_country && (
-                      <div className="flex items-center gap-4">
-                        <Globe className="h-5 w-5 text-orange-500 shrink-0" />
-                        <span className="text-sm font-medium text-gray-700">
-                          {organization.billing_country}
-                        </span>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Détails pratiques */}
-                  {(event.public_type || event.level || event.venue_type ||
-                    event.transport_car || event.transport_public || event.transport_train ||
-                    event.accessibility_pmr !== undefined || event.registration_deadline) && (
-                    <div className="border border-gray-100 rounded-2xl p-5">
-                      <h2 className="text-base font-bold text-gray-900 mb-4">Détails pratiques</h2>
-                      <div className="space-y-3 text-sm text-gray-700">
-                        {event.public_type && (
-                          <div className="flex items-center gap-3">
-                            <Users className="h-4 w-4 text-orange-500 shrink-0" />
-                            <span>{event.public_type}</span>
-                          </div>
-                        )}
-                        {event.level && (
-                          <div className="flex items-center gap-3">
-                            <BarChart2 className="h-4 w-4 text-orange-500 shrink-0" />
-                            <span>{event.level}</span>
-                          </div>
-                        )}
-                        {event.venue_type && (
-                          <div className="flex items-center gap-3">
-                            <Building2 className="h-4 w-4 text-orange-500 shrink-0" />
-                            <span>{event.venue_type}</span>
-                          </div>
-                        )}
-                        {(event.transport_car || event.transport_public || event.transport_train) && (
-                          <div className="flex items-start gap-3 pt-3 border-t border-gray-100">
-                            <Car className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
-                            <div className="flex flex-wrap gap-2">
-                              {event.transport_car && <span className="flex items-center gap-1"><Car className="h-3 w-3" /> Voiture</span>}
-                              {event.transport_public && <span className="flex items-center gap-1"><Bus className="h-3 w-3" /> Transport en commun</span>}
-                              {event.transport_train && <span className="flex items-center gap-1"><Train className="h-3 w-3" /> Train</span>}
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                          <Accessibility className="h-4 w-4 text-orange-500 shrink-0" />
-                          <span>Accès PMR : {event.accessibility_pmr ? 'Oui' : 'Non'}</span>
-                        </div>
-                        {event.registration_deadline && (
-                          <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                            <Clock className="h-4 w-4 text-orange-500 shrink-0" />
-                            <span>Inscription avant le {new Date(event.registration_deadline).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Tickets List */}
                   <div className="space-y-4">
@@ -531,6 +550,8 @@ const EventDetail = () => {
                       )}
                     </div>
                   )}
+
+                  {showClaimBanner && <ClaimBanner />}
                 </div>
               </div>
             </Card>
