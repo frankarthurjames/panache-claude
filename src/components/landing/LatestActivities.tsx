@@ -43,13 +43,11 @@ export const LatestActivities = () => {
           `)
                     .eq('status', 'published')
                     .gte('starts_at', new Date().toISOString())
-                    .order('created_at', { ascending: false })
-                    .limit(20);
+                    .order('starts_at', { ascending: true })
+                    .limit(6);
 
                 if (error) throw error;
-                const filtered = (data || [])
-                    .filter(e => e.description && e.description.trim().length >= 50)
-                    .slice(0, 6);
+                const filtered = (data || []).slice(0, 6);
                 setActivities(filtered);
             } catch (error) {
                 console.error("Error fetching events:", error);

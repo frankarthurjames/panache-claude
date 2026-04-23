@@ -13,12 +13,22 @@ interface HeroProps {
 
 const QUICK_SPORTS = ['Triathlon', 'Trail', 'Football', 'Cyclisme', 'Natation'];
 
+const PLACEHOLDERS = [
+  'Triathlon à Lyon...',
+  'Trail en Bretagne...',
+  'Football ce week-end...',
+  'Natation en Île-de-France...',
+  'Cyclisme en mai...',
+];
+
 export const Hero = ({ stats, loading }: HeroProps) => {
   const navigate = useNavigate();
-  const [sport, setSport] = useState("");
-  const [location, setLocation] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
+  const [activePanel, setActivePanel] = useState<'sport' | 'region' | 'date' | null>(null);
+  const [sport, setSport] = useState('');
+  const [region, setRegion] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [sports, setSports] = useState<{ name: string; slug: string }[]>([]);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
 
   useEffect(() => {
     supabase
@@ -28,10 +38,17 @@ export const Hero = ({ stats, loading }: HeroProps) => {
       .then(({ data }) => { if (data) setSports(data as any); });
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIdx(i => (i + 1) % PLACEHOLDERS.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
   const goSearch = () => {
     const params = new URLSearchParams();
     if (sport) params.append('sport', sport);
-    if (location) params.append('region', location);
+    if (region) params.append('region', region);
     if (dateFilter === 'Ce week-end') {
       const now = new Date();
       const day = now.getDay();
@@ -41,14 +58,12 @@ export const Hero = ({ stats, loading }: HeroProps) => {
       params.append('date_start', friday.toISOString().slice(0, 10));
     } else if (dateFilter === 'Ce mois') {
       params.append('month', new Date().toISOString().slice(0, 7));
-    } else if (dateFilter) {
-      params.append('date', dateFilter);
     }
     navigate(params.toString() ? `/events?${params}` : '/events');
   };
 
   return (
-    <header className="relative h-[620px] flex items-center justify-center overflow-hidden">
+    <header className="relative h-[700px] flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1600&q=80"
@@ -63,83 +78,143 @@ export const Hero = ({ stats, loading }: HeroProps) => {
           Votre prochain événement<br />sportif commence ici
         </h1>
 
-        {/* Search bar */}
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl md:rounded-full p-2 shadow-2xl overflow-hidden">
-          <div className="flex flex-col md:flex-row items-center gap-2 md:gap-0">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
 
-            {/* Région */}
-            <div className="flex-1 w-full px-3">
-              <select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="h-12 border-0 w-full text-lg text-gray-400 bg-transparent focus:outline-none focus:text-gray-700 md:border-r border-gray-100"
-              >
-                <option value="">Région ou ville</option>
-                {REGIONS.map(r => (
-                  <option key={r.name} value={r.name}>{r.name}</option>
-                ))}
-              </select>
+            {/* Ligne du haut — placeholder rotatif */}
+            <div
+              className="px-6 py-4 cursor-pointer"
+              onClick={() => setActivePanel(activePanel ? null : 'sport')}
+            >
+              <p className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-1">
+                Que cherchez-vous ?
+              </p>
+              <p className="text-gray-400 text-sm">
+                {sport ? sports.find(s => s.slug === sport)?.name : PLACEHOLDERS[placeholderIdx]}
+              </p>
             </div>
 
-            {/* Sport */}
-            <div className="flex-1 w-full px-3">
-              <select
-                value={sport}
-                onChange={(e) => setSport(e.target.value)}
-                className="h-12 border-0 w-full text-lg text-gray-400 bg-transparent focus:outline-none focus:text-gray-700 md:border-r border-gray-100"
+            <div className="border-t border-gray-100" />
+
+            {/* 3 pills en ligne */}
+            <div className="grid grid-cols-3 divide-x divide-gray-100">
+
+              <button
+                onClick={() => setActivePanel(activePanel === 'sport' ? null : 'sport')}
+                className={`px-4 py-3 text-left transition-colors ${activePanel === 'sport' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
               >
-                <option value="">Sport</option>
-                {sports.map(s => (
-                  <option key={s.slug} value={s.slug}>{s.name}</option>
-                ))}
-              </select>
+                <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">Sport</p>
+                <p className="text-sm text-gray-500 truncate">
+                  {sport ? sports.find(s => s.slug === sport)?.name : 'Tous'}
+                </p>
+              </button>
+
+              <button
+                onClick={() => setActivePanel(activePanel === 'region' ? null : 'region')}
+                className={`px-4 py-3 text-left transition-colors ${activePanel === 'region' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
+              >
+                <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">Région</p>
+                <p className="text-sm text-gray-500 truncate">
+                  {region || 'Partout'}
+                </p>
+              </button>
+
+              <button
+                onClick={() => setActivePanel(activePanel === 'date' ? null : 'date')}
+                className={`px-4 py-3 text-left transition-colors ${activePanel === 'date' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
+              >
+                <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">Quand</p>
+                <p className="text-sm text-gray-500 truncate">
+                  {dateFilter || 'Peu importe'}
+                </p>
+              </button>
             </div>
 
-            {/* Date */}
-            <div className="flex-1 w-full">
-              <div className="flex gap-2 items-center h-12 px-3 flex-wrap">
-                {['Ce week-end', 'Ce mois'].map(label => (
+            {/* Bouton rechercher */}
+            <div className="px-4 pb-4 pt-2">
+              <Button
+                onClick={goSearch}
+                className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-base flex items-center justify-center gap-2"
+              >
+                <Search className="h-5 w-5" />
+                Rechercher
+              </Button>
+            </div>
+
+            {/* Panneaux dépliants */}
+            {activePanel === 'sport' && (
+              <div className="border-t border-gray-100 px-4 pb-4 pt-3 max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2">
                   <button
-                    key={label}
-                    onClick={() => setDateFilter(dateFilter === label ? "" : label)}
-                    className={`text-sm px-3 py-1 rounded-full border whitespace-nowrap transition-colors ${
-                      dateFilter === label
-                        ? 'bg-orange-500 text-white border-orange-500'
-                        : 'border-gray-200 text-gray-500 hover:border-orange-300'
-                    }`}
+                    onClick={() => { setSport(''); setActivePanel(null); }}
+                    className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${!sport ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
                   >
-                    {label}
+                    Tous les sports
                   </button>
-                ))}
-                <input
-                  type="date"
-                  className="text-sm text-gray-500 border-0 focus:outline-none bg-transparent"
-                  onChange={(e) => setDateFilter(e.target.value)}
-                />
+                  {sports.map(s => (
+                    <button
+                      key={s.slug}
+                      onClick={() => { setSport(s.slug); setActivePanel(null); }}
+                      className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${sport === s.slug ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <Button
-              onClick={goSearch}
-              className="w-full md:w-14 h-12 md:h-14 md:rounded-full p-0 flex items-center justify-center hover:scale-105 transition-transform shadow-md shrink-0"
-              style={{ background: "#F97316" }}
-            >
-              <Search className="h-6 w-6 text-white" />
-            </Button>
+            {activePanel === 'region' && (
+              <div className="border-t border-gray-100 px-4 pb-4 pt-3 max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-1 gap-1">
+                  <button
+                    onClick={() => { setRegion(''); setActivePanel(null); }}
+                    className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${!region ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                  >
+                    Toutes les régions
+                  </button>
+                  {REGIONS.map(r => (
+                    <button
+                      key={r.name}
+                      onClick={() => { setRegion(r.name); setActivePanel(null); }}
+                      className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${region === r.name ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                    >
+                      {r.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activePanel === 'date' && (
+              <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {['Ce week-end', 'Ce mois', 'Dans 3 mois', 'Cette année'].map(label => (
+                    <button
+                      key={label}
+                      onClick={() => { setDateFilter(dateFilter === label ? '' : label); setActivePanel(null); }}
+                      className={`px-3 py-2 rounded-lg text-sm text-left transition-colors ${dateFilter === label ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Quick sport pills */}
-        <div className="flex gap-2 mt-5 flex-wrap justify-center">
-          {QUICK_SPORTS.map(s => (
-            <button
-              key={s}
-              onClick={() => navigate(`/events?sport=${s.toLowerCase()}`)}
-              className="bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-1.5 rounded-full backdrop-blur-sm transition-colors"
-            >
-              {s}
-            </button>
-          ))}
+          {/* Pills rapides */}
+          <div className="flex gap-2 mt-4 flex-wrap justify-center">
+            {QUICK_SPORTS.map(s => (
+              <button
+                key={s}
+                onClick={() => navigate(`/events?sport=${s.toLowerCase()}`)}
+                className="bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-1.5 rounded-full backdrop-blur-sm transition-colors"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </header>

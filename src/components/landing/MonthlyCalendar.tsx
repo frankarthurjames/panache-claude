@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export const MonthlyCalendar = () => {
-  const [months, setMonths] = useState<{ key: string; label: string; count: number }[]>([]);
+  const [months, setMonths] = useState<{ month: string; count: number; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,25 +15,26 @@ export const MonthlyCalendar = () => {
           .from("events")
           .select("starts_at")
           .eq("status", "published")
-          .gte("starts_at", new Date().toISOString())
+          .gte("starts_at", new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z')
           .order("starts_at", { ascending: true });
 
-        const counts: Record<string, number> = {};
+        const countsByKey: Record<string, number> = {};
+        const labelsByKey: Record<string, string> = {};
+
         for (const e of data || []) {
           const d = new Date(e.starts_at);
-          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-          counts[key] = (counts[key] || 0) + 1;
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          countsByKey[key] = (countsByKey[key] || 0) + 1;
+          if (!labelsByKey[key]) {
+            labelsByKey[key] = capitalize(
+              new Date(`${key}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+            );
+          }
         }
 
-        const result = Object.entries(counts)
+        const result = Object.entries(countsByKey)
           .slice(0, 12)
-          .map(([key, count]) => {
-            const [year, month] = key.split("-");
-            const label = capitalize(
-              new Date(`${key}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
-            );
-            return { key, label, count };
-          });
+          .map(([slug, count]) => ({ month: labelsByKey[slug], count, slug }));
 
         setMonths(result);
       } catch (err) {
@@ -48,7 +49,7 @@ export const MonthlyCalendar = () => {
 
   if (loading) {
     return (
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="container mx-auto flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
         </div>
@@ -59,23 +60,21 @@ export const MonthlyCalendar = () => {
   if (months.length === 0) return null;
 
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="container mx-auto max-w-2xl">
+    <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto">
         <h2 className="text-3xl font-bold mb-8 text-gray-900">Calendrier des événements</h2>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {months.map((m, i) => (
+        <div className="space-y-0">
+          {months.map(({ month, count, slug }) => (
             <a
-              key={m.key}
-              href={`/events?month=${m.key}`}
-              className={`flex items-center justify-between px-6 py-4 hover:bg-orange-50 transition-colors group ${
-                i < months.length - 1 ? "border-b border-gray-100" : ""
-              }`}
+              key={slug}
+              href={`/events?month=${slug}`}
+              className="flex items-center justify-between py-4 border-b border-gray-100 hover:bg-gray-50 px-2 -mx-2 rounded-lg transition-colors group"
             >
-              <span className="font-semibold text-gray-800 group-hover:text-orange-600 transition-colors">
-                {m.label}
+              <span className="text-base font-semibold text-gray-900 capitalize group-hover:text-orange-500 transition-colors">
+                {month}
               </span>
-              <span className="font-bold text-orange-500">
-                {m.count} événement{m.count > 1 ? "s" : ""}
+              <span className="text-base font-bold text-orange-500">
+                {count} événement{count > 1 ? 's' : ''}
               </span>
             </a>
           ))}

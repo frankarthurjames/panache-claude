@@ -15,8 +15,6 @@ export const CtaBand = () => {
       .then(({ count }) => setOrgCount(count));
   }, []);
 
-  const displayCount = orgCount !== null ? orgCount.toString() : "250";
-
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-500 to-orange-600">
       <div className="container mx-auto text-center">
@@ -24,8 +22,10 @@ export const CtaBand = () => {
           Ton prochain événement commence ici
         </h2>
         <p className="text-xl mb-10 text-white/90 max-w-2xl mx-auto leading-relaxed">
-          Rejoins plus de {displayCount} organisateurs qui ont choisi Panache
-          pour créer des événements sportifs exceptionnels.
+          {orgCount !== null
+            ? `Rejoins les ${orgCount} organisateurs qui ont choisi Panache pour créer des événements sportifs exceptionnels.`
+            : 'Rejoins les organisateurs qui ont choisi Panache pour créer des événements sportifs exceptionnels.'
+          }
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button size="lg" variant="secondary" asChild className="text-lg px-10 py-4 h-auto bg-white text-orange-600 hover:bg-gray-50">
