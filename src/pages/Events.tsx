@@ -3,11 +3,10 @@ import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { EventCard } from "@/components/EventCard";
 import { Input } from "@/components/ui/input";
-import { Search, ChevronDown, Loader2 } from "lucide-react";
-import { useSearchParams, Link } from "react-router-dom";
+import { Search, ChevronDown, Loader2, X } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 import {
@@ -17,101 +16,76 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface Event {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  image: string;
-  tag: string;
-  tagColor: string;
-  price: string;
-  price_cents: number;
-  starts_at: string;
-}
-
 interface Sport {
   id: string;
   name: string;
   slug: string;
 }
 
+const normalize = (str: string) =>
+  str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+
 const Events = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSportParam = searchParams.get('sport') || "Tous";
   const initialQuery = searchParams.get('q') || "";
+  const regionFilter = searchParams.get('region');
+  const monthFilter = searchParams.get('month');
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedSportSlug, setSelectedSportSlug] = useState(initialSportParam);
   const [dbSports, setDbSports] = useState<Sport[]>([]);
-  const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("Date");
 
-  // Fetch sports and events
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
 
-        // 1. Fetch Sports
         const { data: sportsData } = await supabase
           .from('sports' as any)
           .select('*')
           .order('name');
+        if (sportsData) setDbSports(sportsData as any[]);
 
-        if (sportsData) {
-          setDbSports(sportsData as any[]);
-        }
-
-        // 2. Fetch Events with sports join
         const { data: eventsData, error } = await supabase
           .from('events')
-          .select(`
-            *,
-            sports:sport_id ( name, slug ),
-            ticket_types ( price_cents )
-          `)
+          .select(`*, sports:sport_id(name, slug), ticket_types(price_cents)`)
           .eq('status', 'published')
           .gte('starts_at', new Date().toISOString())
           .order('starts_at', { ascending: true });
 
         if (error) throw error;
 
-        const formattedEvents = eventsData?.map(event => {
+        const formatted = eventsData?.map(event => {
           const minPrice = event.ticket_types?.length > 0
             ? Math.min(...event.ticket_types.map((t: any) => t.price_cents))
             : 0;
 
-          // Use DB sport if available, otherwise infer or fallback
           let tag = (event.sports as any)?.name;
           const tagSlug = (event.sports as any)?.slug || "sport";
           let tagColor = "bg-orange-500";
 
           if (!tag) {
-            const sportMatch = event.title.match(/^\[(.*?)\]/);
-            tag = sportMatch ? sportMatch[1] : "Sport";
-
-            const titleLower = event.title.toLowerCase();
-            if (titleLower.includes("tennis")) { tagColor = "bg-orange-500"; }
-            else if (titleLower.includes("bmx") || titleLower.includes("skate")) { tagColor = "bg-orange-400"; }
-            else if (titleLower.includes("natation") || titleLower.includes("piscine") || titleLower.includes("aquatique")) { tagColor = "bg-blue-500"; }
-            else if (titleLower.includes("running") || titleLower.includes("marathon") || titleLower.includes("athlétisme")) { tagColor = "bg-red-500"; }
-            else if (titleLower.includes("vtt") || titleLower.includes("vélo") || titleLower.includes("cyclisme")) { tagColor = "bg-green-600"; }
-            else if (titleLower.includes("football") || titleLower.includes("foot ")) { tagColor = "bg-emerald-600"; }
-            else if (titleLower.includes("kayak") || titleLower.includes("canoë")) { tagColor = "bg-sky-500"; }
+            const m = event.title.match(/^\[(.*?)\]/);
+            tag = m ? m[1] : "Sport";
+            const tl = event.title.toLowerCase();
+            if (tl.includes("natation") || tl.includes("aquatique")) tagColor = "bg-blue-500";
+            else if (tl.includes("vtt") || tl.includes("cyclisme")) tagColor = "bg-green-600";
+            else if (tl.includes("football")) tagColor = "bg-emerald-600";
+            else if (tl.includes("kayak")) tagColor = "bg-sky-500";
           } else {
-            // Colors based on slug for consistency
-            if (tagSlug === "tennis") tagColor = "bg-orange-500";
-            else if (tagSlug === "vtt" || tagSlug === "cyclisme") tagColor = "bg-green-600";
+            if (tagSlug === "vtt" || tagSlug === "cyclisme") tagColor = "bg-green-600";
             else if (tagSlug === "natation") tagColor = "bg-blue-500";
             else if (tagSlug === "football") tagColor = "bg-emerald-600";
             else if (tagSlug === "athletisme") tagColor = "bg-red-500";
           }
 
-          const hasMultiplePrices = event.ticket_types && new Set(event.ticket_types.map((t: any) => t.price_cents)).size > 1;
+          const hasMultiple = event.ticket_types && new Set(event.ticket_types.map((t: any) => t.price_cents)).size > 1;
           const minPriceStr = minPrice > 0 ? `${(minPrice / 100).toFixed(0)}€` : 'Gratuit';
-          const priceDisplay = hasMultiplePrices ? `Dès ${minPriceStr}` : minPriceStr;
+          const priceDisplay = hasMultiple ? `Dès ${minPriceStr}` : minPriceStr;
 
           return {
             id: event.id,
@@ -124,25 +98,24 @@ const Events = () => {
             tagSlug,
             price: priceDisplay,
             price_cents: minPrice,
-            starts_at: event.starts_at
+            starts_at: event.starts_at,
+            region: event.region || null,
           };
         }) || [];
-        setAllEvents(formattedEvents);
+
+        setAllEvents(formatted);
       } catch (err) {
         console.error('Error:', err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // Combined filtering and sorting logic
   const displayedEvents = useMemo(() => {
     let filtered = [...allEvents];
 
-    // Search filter
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(e =>
@@ -152,57 +125,62 @@ const Events = () => {
       );
     }
 
-    // Sport filter (supports slug or name)
     if (selectedSportSlug !== "Tous") {
-      const normalizeStr = (str: string) =>
-        str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-
-      const target = normalizeStr(selectedSportSlug);
-
+      const target = normalize(selectedSportSlug);
       filtered = filtered.filter(e =>
-        normalizeStr((e as any).tagSlug) === target ||
-        normalizeStr(e.tag) === target
+        normalize(e.tagSlug) === target || normalize(e.tag) === target
       );
     }
 
-    // Sorting
+    if (regionFilter) {
+      filtered = filtered.filter(e => e.region === regionFilter);
+    }
+
+    if (monthFilter) {
+      const [y, m] = monthFilter.split("-").map(Number);
+      filtered = filtered.filter(e => {
+        const d = new Date(e.starts_at);
+        return d.getFullYear() === y && d.getMonth() + 1 === m;
+      });
+    }
+
     filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "Date":
-          return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
-        case "Prix":
-          return a.price_cents - b.price_cents;
-        case "Nom":
-          return a.title.localeCompare(b.title);
-        default:
-          return 0;
-      }
+      if (sortBy === "Prix") return a.price_cents - b.price_cents;
+      if (sortBy === "Nom") return a.title.localeCompare(b.title);
+      return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
     });
 
     return filtered;
-  }, [searchQuery, selectedSportSlug, sortBy, allEvents]);
+  }, [searchQuery, selectedSportSlug, sortBy, allEvents, regionFilter, monthFilter]);
 
-  const handleSportSelect = (sportSlug: string) => {
-    setSelectedSportSlug(sportSlug);
-    const newParams = new URLSearchParams(searchParams);
-    if (sportSlug === "Tous") {
-      newParams.delete('sport');
-    } else {
-      newParams.set('sport', sportSlug);
-    }
-    setSearchParams(newParams);
+  const handleSportSelect = (slug: string) => {
+    setSelectedSportSlug(slug);
+    const p = new URLSearchParams(searchParams);
+    slug === "Tous" ? p.delete('sport') : p.set('sport', slug);
+    setSearchParams(p);
   };
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
-    const newParams = new URLSearchParams(searchParams);
-    if (val) {
-      newParams.set('q', val);
-    } else {
-      newParams.delete('q');
-    }
-    setSearchParams(newParams);
+    const p = new URLSearchParams(searchParams);
+    val ? p.set('q', val) : p.delete('q');
+    setSearchParams(p);
   };
+
+  const clearFilter = (key: string) => {
+    const p = new URLSearchParams(searchParams);
+    p.delete(key);
+    setSearchParams(p);
+  };
+
+  const activeFilterLabel = (() => {
+    if (regionFilter) return `Événements en ${regionFilter}`;
+    if (monthFilter) {
+      const label = new Date(`${monthFilter}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      return `Événements en ${label.charAt(0).toUpperCase() + label.slice(1)}`;
+    }
+    return null;
+  })();
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -212,9 +190,8 @@ const Events = () => {
       />
       <Navbar variant="orange" />
 
-      {/* Hero Header Section */}
+      {/* Hero Header */}
       <div className="relative pt-40 pb-20 overflow-hidden">
-        {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <img
             src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1600&q=80"
@@ -223,18 +200,13 @@ const Events = () => {
           />
           <div className="absolute inset-0 bg-black/60" />
         </div>
-
-        {/* Slanted bottom edge */}
-        <div
-          className="absolute bottom-0 left-0 w-full h-16 bg-white z-10"
-          style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}
-        />
+        <div className="absolute bottom-0 left-0 w-full h-16 bg-white z-10"
+          style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }} />
 
         <div className="relative z-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-white">
           <h1 className="text-4xl md:text-6xl font-bold mb-10 tracking-tight">Tous les événements</h1>
 
           <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-            {/* Search Bar */}
             <div className="relative w-full md:max-w-xl text-black">
               <Input
                 placeholder="Rechercher un événement, un lieu..."
@@ -250,7 +222,6 @@ const Events = () => {
               </Button>
             </div>
 
-            {/* Sort Dropdown */}
             <div className="flex items-center gap-3 w-full md:w-auto">
               <span className="text-sm font-medium text-white/80 whitespace-nowrap">Trier par</span>
               <DropdownMenu>
@@ -273,11 +244,9 @@ const Events = () => {
           <div className="mt-10 flex gap-3 overflow-x-auto pb-2 no-scrollbar">
             <Button
               onClick={() => handleSportSelect("Tous")}
-              variant={selectedSportSlug === "Tous" ? "default" : "outline"}
-              className={`rounded-full px-6 h-10 font-medium transition-all ${selectedSportSlug === "Tous"
+              className={`rounded-full px-6 h-10 font-medium transition-all flex-shrink-0 ${selectedSportSlug === "Tous"
                 ? "bg-[#F97316] hover:bg-[#EA580C] text-white border-0"
-                : "bg-white/10 text-white border-white/20 hover:bg-white/20"
-                }`}
+                : "bg-white/10 text-white border border-white/20 hover:bg-white/20"}`}
             >
               Tous
             </Button>
@@ -285,11 +254,9 @@ const Events = () => {
               <Button
                 key={sport.id}
                 onClick={() => handleSportSelect(sport.slug)}
-                variant={selectedSportSlug === sport.slug ? "default" : "outline"}
-                className={`rounded-full px-6 h-10 font-medium transition-all ${selectedSportSlug === sport.slug
+                className={`rounded-full px-6 h-10 font-medium transition-all flex-shrink-0 ${selectedSportSlug === sport.slug
                   ? "bg-[#F97316] hover:bg-[#EA580C] text-white border-0"
-                  : "bg-white/10 text-white border-white/20 hover:bg-white/20"
-                  }`}
+                  : "bg-white/10 text-white border border-white/20 hover:bg-white/20"}`}
               >
                 {sport.name}
               </Button>
@@ -300,6 +267,23 @@ const Events = () => {
 
       {/* Events Grid */}
       <main className="px-4 sm:px-6 lg:px-8 pb-24 max-w-7xl mx-auto">
+        {/* Active filter banner */}
+        {activeFilterLabel && (
+          <div className="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl px-5 py-3 mb-6 mt-4">
+            <span className="text-orange-800 font-semibold text-sm">{activeFilterLabel}</span>
+            <button
+              onClick={() => {
+                if (regionFilter) clearFilter('region');
+                if (monthFilter) clearFilter('month');
+              }}
+              className="text-orange-500 hover:text-orange-700 transition-colors"
+              aria-label="Effacer le filtre"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />

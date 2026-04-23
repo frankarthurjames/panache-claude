@@ -1,42 +1,82 @@
-
-import React from "react";
-import { Link } from "react-router-dom";
-import { SectionHeading } from "./SectionHeading";
-
-const REGIONS = [
-    { name: "Île-de-France", image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&auto=format&fit=crop&q=60" },
-    { name: "Auvergne-Rhône-Alpes", image: "https://images.unsplash.com/photo-1599827699703-d5272a808e0e?w=800&auto=format&fit=crop&q=60" },
-    { name: "Provence-Alpes-Côte d'Azur", image: "https://images.unsplash.com/photo-1534234828563-025c93e4a555?w=800&auto=format&fit=crop&q=60" },
-];
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { REGIONS } from "@/data/regions";
+import { Loader2 } from "lucide-react";
 
 export const RegionsGrid = () => {
+  const [regions, setRegions] = useState<{ name: string; image: string; count: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const { data } = await supabase
+          .from("events")
+          .select("region")
+          .eq("status", "published")
+          .gte("starts_at", new Date().toISOString())
+          .not("region", "is", null);
+
+        const counts: Record<string, number> = {};
+        for (const e of data || []) {
+          if (e.region) counts[e.region] = (counts[e.region] || 0) + 1;
+        }
+
+        const result = REGIONS
+          .filter((r) => counts[r.name] > 0)
+          .map((r) => ({ ...r, count: counts[r.name] }))
+          .sort((a, b) => b.count - a.count);
+
+        setRegions(result);
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRegions();
+  }, []);
+
+  if (loading) {
     return (
-        <section className="py-24 px-4 sm:px-6 lg:px-8">
-            <div className="container mx-auto">
-                <SectionHeading
-                    title="Parcourir par région"
-                    subtitle="Trouve des événements près de chez toi."
-                />
-                <div className="grid md:grid-cols-3 gap-8">
-                    {REGIONS.map((region) => (
-                        <Link
-                            key={region.name}
-                            to={`/events?region=${encodeURIComponent(region.name)}`}
-                            className="group relative aspect-video overflow-hidden rounded-2xl bg-muted"
-                        >
-                            <img
-                                src={region.image}
-                                alt={region.name}
-                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-black/40 transition-colors group-hover:bg-black/50" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <h3 className="text-2xl font-bold text-white text-center px-4">{region.name}</h3>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            </div>
-        </section>
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        </div>
+      </section>
     );
+  }
+
+  if (regions.length === 0) return null;
+
+  return (
+    <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto">
+        <h2 className="text-3xl font-bold mb-8 text-gray-900">À la découverte des régions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {regions.map((region) => (
+            <a
+              key={region.name}
+              href={`/events?region=${encodeURIComponent(region.name)}`}
+              className="relative rounded-xl overflow-hidden h-32 cursor-pointer group"
+            >
+              <img
+                src={region.image}
+                alt={region.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 p-3">
+                <p className="text-white font-bold text-sm leading-tight">{region.name}</p>
+                <p className="text-white/80 text-xs">
+                  {region.count} événement{region.count > 1 ? "s" : ""}
+                </p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 };
