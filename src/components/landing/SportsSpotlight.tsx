@@ -28,7 +28,8 @@ export const SportsSpotlight = () => {
           counts[s.id].count++;
         }
 
-        let top = Object.values(counts).sort((a: any, b: any) => b.count - a.count).slice(0, 6);
+        const topInit = Object.values(counts).sort((a: any, b: any) => b.count - a.count).slice(0, 6);
+        const top = [...topInit];
 
         // Fill up to 6 with sports that have no events (alphabetical)
         if (top.length < 6) {

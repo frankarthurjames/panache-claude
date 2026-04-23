@@ -166,14 +166,14 @@ const Events = () => {
   const handleSportSelect = (slug: string) => {
     setSelectedSportSlug(slug);
     const p = new URLSearchParams(searchParams);
-    slug === "Tous" ? p.delete('sport') : p.set('sport', slug);
+    if (slug === "Tous") { p.delete('sport'); } else { p.set('sport', slug); }
     setSearchParams(p);
   };
 
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
     const p = new URLSearchParams(searchParams);
-    val ? p.set('q', val) : p.delete('q');
+    if (val) { p.set('q', val); } else { p.delete('q'); }
     setSearchParams(p);
   };
 
