@@ -23,8 +23,7 @@ export const RegionsGrid = () => {
         }
 
         const result = REGIONS
-          .filter((r) => counts[r.name] > 0)
-          .map((r) => ({ ...r, count: counts[r.name] }))
+          .map((r) => ({ ...r, count: counts[r.name] || 0 }))
           .sort((a, b) => b.count - a.count);
 
         setRegions(result);
