@@ -44,11 +44,22 @@ const Events = () => {
       try {
         setLoading(true);
 
-        const { data: sportsData } = await supabase
-          .from('sports' as any)
-          .select('*')
-          .order('name');
-        if (sportsData) setDbSports(sportsData as any[]);
+        // Only fetch sports that have at least one published upcoming event
+        const { data: eventsForSports } = await supabase
+          .from('events')
+          .select('sport_id, sports:sport_id(id, name, slug)')
+          .eq('status', 'published')
+          .gte('starts_at', new Date().toISOString());
+
+        const sportsWithEvents = Array.from(
+          new Map(
+            (eventsForSports || [])
+              .filter(e => e.sports)
+              .map(e => [(e.sports as any).id, e.sports])
+          ).values()
+        ).sort((a: any, b: any) => a.name.localeCompare(b.name)) as Sport[];
+
+        setDbSports(sportsWithEvents);
 
         const { data: eventsData, error } = await supabase
           .from('events')
@@ -83,7 +94,8 @@ const Events = () => {
             else if (tagSlug === "athletisme") tagColor = "bg-red-500";
           }
 
-          const hasMultiple = event.ticket_types && new Set(event.ticket_types.map((t: any) => t.price_cents)).size > 1;
+          const hasMultiple = event.ticket_types &&
+            new Set(event.ticket_types.map((t: any) => t.price_cents)).size > 1;
           const minPriceStr = minPrice > 0 ? `${(minPrice / 100).toFixed(0)}€` : 'Gratuit';
           const priceDisplay = hasMultiple ? `Dès ${minPriceStr}` : minPriceStr;
 
@@ -132,9 +144,7 @@ const Events = () => {
       );
     }
 
-    if (regionFilter) {
-      filtered = filtered.filter(e => e.region === regionFilter);
-    }
+    if (regionFilter) filtered = filtered.filter(e => e.region === regionFilter);
 
     if (monthFilter) {
       const [y, m] = monthFilter.split("-").map(Number);
@@ -173,25 +183,33 @@ const Events = () => {
     setSearchParams(p);
   };
 
-  const activeFilterLabel = (() => {
-    if (regionFilter) return `Événements en ${regionFilter}`;
-    if (monthFilter) {
-      const label = new Date(`${monthFilter}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-      return `Événements en ${label.charAt(0).toUpperCase() + label.slice(1)}`;
-    }
-    return null;
-  })();
+  // Dynamic hero title
+  const heroTitle = regionFilter
+    ? `Événements en ${regionFilter}`
+    : selectedSportSlug !== 'Tous'
+    ? `Événements · ${dbSports.find(s => s.slug === selectedSportSlug)?.name || selectedSportSlug}`
+    : monthFilter
+    ? `Événements · ${new Date(`${monthFilter}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`
+    : 'Tous les événements';
+
+  // Active filter badge (region or month)
+  const activeFilterLabel = regionFilter
+    ? `Région : ${regionFilter}`
+    : monthFilter
+    ? `Mois : ${new Date(`${monthFilter}-01`).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}`
+    : null;
+  const activeFilterKey = regionFilter ? 'region' : monthFilter ? 'month' : null;
 
   return (
     <div className="min-h-screen bg-white font-sans">
       <SEO
-        title="Tous les événements"
+        title={heroTitle}
         description="Parcourez et réservez parmi une large sélection d'événements sportifs et activités."
       />
       <Navbar variant="orange" />
 
-      {/* Hero Header */}
-      <div className="relative pt-40 pb-20 overflow-hidden">
+      {/* Hero */}
+      <div className="relative pt-40 pb-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
             src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1600&q=80"
@@ -200,11 +218,13 @@ const Events = () => {
           />
           <div className="absolute inset-0 bg-black/60" />
         </div>
-        <div className="absolute bottom-0 left-0 w-full h-16 bg-white z-10"
-          style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }} />
+        <div
+          className="absolute bottom-0 left-0 w-full h-24 bg-white z-10"
+          style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}
+        />
 
         <div className="relative z-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-white">
-          <h1 className="text-4xl md:text-6xl font-bold mb-10 tracking-tight">Tous les événements</h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-10 tracking-tight">{heroTitle}</h1>
 
           <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
             <div className="relative w-full md:max-w-xl text-black">
@@ -239,51 +259,58 @@ const Events = () => {
               </DropdownMenu>
             </div>
           </div>
-
-          {/* Sport Pills */}
-          <div className="mt-10 flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-            <Button
-              onClick={() => handleSportSelect("Tous")}
-              className={`rounded-full px-6 h-10 font-medium transition-all flex-shrink-0 ${selectedSportSlug === "Tous"
-                ? "bg-[#F97316] hover:bg-[#EA580C] text-white border-0"
-                : "bg-white/10 text-white border border-white/20 hover:bg-white/20"}`}
-            >
-              Tous
-            </Button>
-            {dbSports.map((sport) => (
-              <Button
-                key={sport.id}
-                onClick={() => handleSportSelect(sport.slug)}
-                className={`rounded-full px-6 h-10 font-medium transition-all flex-shrink-0 ${selectedSportSlug === sport.slug
-                  ? "bg-[#F97316] hover:bg-[#EA580C] text-white border-0"
-                  : "bg-white/10 text-white border border-white/20 hover:bg-white/20"}`}
-              >
-                {sport.name}
-              </Button>
-            ))}
-          </div>
         </div>
       </div>
 
-      {/* Events Grid */}
-      <main className="px-4 sm:px-6 lg:px-8 pb-24 max-w-7xl mx-auto">
-        {/* Active filter banner */}
-        {activeFilterLabel && (
-          <div className="flex items-center justify-between bg-orange-50 border border-orange-200 rounded-xl px-5 py-3 mb-6 mt-4">
-            <span className="text-orange-800 font-semibold text-sm">{activeFilterLabel}</span>
+      {/* Ligne 1 — Pills sport (fond blanc) */}
+      <div className="border-b border-gray-100">
+        <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar pt-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <button
+            onClick={() => handleSportSelect('Tous')}
+            className={`rounded-full px-5 h-9 text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              selectedSportSlug === 'Tous'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            Tous
+          </button>
+          {dbSports.map(sport => (
             <button
-              onClick={() => {
-                if (regionFilter) clearFilter('region');
-                if (monthFilter) clearFilter('month');
-              }}
-              className="text-orange-500 hover:text-orange-700 transition-colors"
-              aria-label="Effacer le filtre"
+              key={sport.id}
+              onClick={() => handleSportSelect(sport.slug)}
+              className={`rounded-full px-5 h-9 text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                selectedSportSlug === sport.slug
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >
-              <X className="h-4 w-4" />
+              {sport.name}
             </button>
+          ))}
+        </div>
+
+        {/* Ligne 2 — Compteur + filtre actif */}
+        {(activeFilterLabel || !loading) && (
+          <div className="flex items-center justify-between pb-3 pt-1 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <span className="text-sm text-gray-500">
+              {loading ? '' : `${displayedEvents.length} événement${displayedEvents.length !== 1 ? 's' : ''}`}
+            </span>
+            {activeFilterLabel && activeFilterKey && (
+              <button
+                onClick={() => clearFilter(activeFilterKey)}
+                className="flex items-center gap-1.5 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-3 py-1 hover:bg-orange-100 transition-colors"
+              >
+                {activeFilterLabel}
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         )}
+      </div>
 
+      {/* Grid */}
+      <main className="px-4 sm:px-6 lg:px-8 pb-24 max-w-7xl mx-auto pt-8">
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
