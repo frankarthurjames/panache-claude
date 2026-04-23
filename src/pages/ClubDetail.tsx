@@ -26,14 +26,14 @@ const ClubDetail = () => {
                 // Try slug first (SEO), fallback to UUID
                 let { data: org, error: orgError } = await supabase
                     .from('organizations')
-                    .select('*')
+                    .select('*, sports:sport_id(name, slug)')
                     .eq('slug', id)
                     .single();
 
                 if (orgError || !org) {
                     const result = await supabase
                         .from('organizations')
-                        .select('*')
+                        .select('*, sports:sport_id(name, slug)')
                         .eq('id', id)
                         .single();
                     org = result.data;
@@ -112,10 +112,27 @@ const ClubDetail = () => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center relative z-10 pt-20">
                     <div className="text-white max-w-2xl">
                         <h1 className="text-5xl font-bold mb-4">{club.name}</h1>
-                        <div className="flex gap-3 mb-6">
-                            <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-0 px-3 py-1 text-sm">
-                                Club
-                            </Badge>
+                        <div className="flex flex-wrap gap-2 mt-3 mb-6">
+                            {club.sports?.name && (
+                                <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                    {club.sports.name}
+                                </span>
+                            )}
+                            {club.members_count && (
+                                <span className="bg-white/20 text-white text-xs font-medium px-3 py-1 rounded-full">
+                                    👥 {club.members_count} licenciés
+                                </span>
+                            )}
+                            {club.founded_year && (
+                                <span className="bg-white/20 text-white text-xs font-medium px-3 py-1 rounded-full">
+                                    📅 Depuis {club.founded_year}
+                                </span>
+                            )}
+                            {club.federation && (
+                                <span className="bg-white/20 text-white text-xs font-medium px-3 py-1 rounded-full">
+                                    🏛️ {club.federation}
+                                </span>
+                            )}
                         </div>
                         <div className="flex gap-4">
                             {club.website && (
@@ -138,6 +155,58 @@ const ClubDetail = () => {
                                 {club.description}
                             </p>
                         </section>
+
+                        {/* Infos clés */}
+                        {(club.practice_type || club.public_type) && (
+                            <div className="grid grid-cols-2 gap-4 border border-gray-100 rounded-2xl p-5">
+                                {club.practice_type && (
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Pratique</p>
+                                        <p className="text-sm font-semibold text-gray-900">{club.practice_type}</p>
+                                    </div>
+                                )}
+                                {club.public_type && (
+                                    <div>
+                                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Public</p>
+                                        <p className="text-sm font-semibold text-gray-900">{club.public_type}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Bon à savoir */}
+                        {club.bon_a_savoir && (
+                            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5">
+                                <p className="text-xs text-orange-500 font-bold uppercase tracking-wide mb-2">
+                                    💡 Bon à savoir
+                                </p>
+                                <p className="text-sm text-gray-800 leading-relaxed">{club.bon_a_savoir}</p>
+                            </div>
+                        )}
+
+                        {/* Infrastructures */}
+                        {(club.venue_1 || club.venue_2 || club.venue_3 || club.accessibility_pmr) && (
+                            <div className="border border-gray-100 rounded-2xl p-5">
+                                <h2 className="text-lg font-bold text-gray-900 mb-4">Infrastructures</h2>
+                                <div className="space-y-2">
+                                    {[club.venue_1, club.venue_2, club.venue_3]
+                                        .filter(Boolean)
+                                        .map((venue, i) => (
+                                            <div key={i} className="flex items-center gap-3">
+                                                <span className="text-lg">📍</span>
+                                                <p className="text-sm text-gray-700">{venue}</p>
+                                            </div>
+                                        ))
+                                    }
+                                    {club.accessibility_pmr && (
+                                        <div className="flex items-center gap-3 pt-3 border-t border-gray-100 mt-2">
+                                            <span className="text-lg">♿️</span>
+                                            <p className="text-sm font-medium text-gray-900">Accès PMR disponible</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         <section>
                             <h2 className="text-2xl font-bold mb-6">Événements</h2>

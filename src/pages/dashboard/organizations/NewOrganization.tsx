@@ -6,6 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { Building2, CreditCard, FileText, CheckCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -23,11 +30,25 @@ const NewOrganization = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orgCount, setOrgCount] = useState<number | null>(null);
   const [loadingCount, setLoadingCount] = useState(true);
+  const [sports, setSports] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState({
     // Step 1: Informations générales
     name: "",
     slug: "",
-    logoUrls: [] as string[], // Changed from logoUrl to logoUrls array
+    logoUrls: [] as string[],
+    category: "company",
+    // Step 1 extra: Profil du club
+    sport_id: "",
+    founded_year: "" as string | number,
+    members_count: "" as string | number,
+    federation: "",
+    practice_type: "",
+    public_type: "",
+    bon_a_savoir: "",
+    venue_1: "",
+    venue_2: "",
+    venue_3: "",
+    accessibility_pmr: false,
     // Step 2: Informations légales
     siretNumber: "",
     billingEmail: "",
@@ -35,7 +56,6 @@ const NewOrganization = () => {
     // Step 3: Configuration Stripe
     stripeAccountId: "",
     acceptStripeTerms: false,
-    category: "company", // Default category
   });
 
   useEffect(() => {
@@ -59,6 +79,14 @@ const NewOrganization = () => {
 
     fetchOrgCount();
   }, [user]);
+
+  useEffect(() => {
+    supabase
+      .from('sports' as any)
+      .select('id, name')
+      .order('name')
+      .then(({ data }) => { if (data) setSports(data as any); });
+  }, []);
 
   const steps = [
     {
@@ -163,6 +191,17 @@ const NewOrganization = () => {
       if (formData.logoUrls[0]) updateFields.logo_url = formData.logoUrls[0];
       if (formData.siretNumber) updateFields.siret_number = formData.siretNumber;
       if (formData.stripeAccountId) updateFields.stripe_account_id = formData.stripeAccountId;
+      if (formData.sport_id) updateFields.sport_id = formData.sport_id;
+      if (formData.founded_year) updateFields.founded_year = Number(formData.founded_year);
+      if (formData.members_count) updateFields.members_count = Number(formData.members_count);
+      if (formData.federation) updateFields.federation = formData.federation;
+      if (formData.practice_type) updateFields.practice_type = formData.practice_type;
+      if (formData.public_type) updateFields.public_type = formData.public_type;
+      if (formData.bon_a_savoir) updateFields.bon_a_savoir = formData.bon_a_savoir;
+      if (formData.venue_1) updateFields.venue_1 = formData.venue_1;
+      if (formData.venue_2) updateFields.venue_2 = formData.venue_2;
+      if (formData.venue_3) updateFields.venue_3 = formData.venue_3;
+      updateFields.accessibility_pmr = formData.accessibility_pmr;
 
       if (Object.keys(updateFields).length > 0) {
         const { error: updateError } = await supabase
@@ -259,6 +298,125 @@ const NewOrganization = () => {
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100">
+              <p className="text-sm font-semibold text-gray-700 mb-4">Profil du club (optionnel)</p>
+
+              <div className="space-y-4">
+                <div>
+                  <Label>Sport principal</Label>
+                  <Select value={formData.sport_id} onValueChange={(v) => setFormData({ ...formData, sport_id: v })}>
+                    <SelectTrigger className="rounded-xl">
+                      <SelectValue placeholder="Sélectionner un sport" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sports.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Année de création</Label>
+                    <Input
+                      type="number"
+                      placeholder="Ex: 1998"
+                      min="1800"
+                      max="2026"
+                      value={formData.founded_year}
+                      onChange={(e) => setFormData({ ...formData, founded_year: e.target.value ? parseInt(e.target.value) : "" })}
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <Label>Nombre de licenciés</Label>
+                    <Input
+                      type="number"
+                      placeholder="Ex: 250"
+                      value={formData.members_count}
+                      onChange={(e) => setFormData({ ...formData, members_count: e.target.value ? parseInt(e.target.value) : "" })}
+                      className="rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Fédération</Label>
+                  <Input
+                    placeholder="Ex: Fédération Française de Triathlon"
+                    value={formData.federation}
+                    onChange={(e) => setFormData({ ...formData, federation: e.target.value })}
+                    className="rounded-xl"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Type de pratique</Label>
+                    <Select value={formData.practice_type} onValueChange={(v) => setFormData({ ...formData, practice_type: v })}>
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue placeholder="Loisir, compétition..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Loisir">Loisir</SelectItem>
+                        <SelectItem value="Compétition">Compétition</SelectItem>
+                        <SelectItem value="Loisir et Compétition">Loisir et Compétition</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Public accueilli</Label>
+                    <Select value={formData.public_type} onValueChange={(v) => setFormData({ ...formData, public_type: v })}>
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue placeholder="Enfants, adultes..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Enfants">Enfants</SelectItem>
+                        <SelectItem value="Adultes">Adultes</SelectItem>
+                        <SelectItem value="Tout public">Tout public</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Bon à savoir</Label>
+                  <Textarea
+                    placeholder="Une info courte et marquante sur votre club..."
+                    maxLength={200}
+                    value={formData.bon_a_savoir}
+                    onChange={(e) => setFormData({ ...formData, bon_a_savoir: e.target.value })}
+                    className="rounded-xl resize-none"
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-400 text-right mt-1">{formData.bon_a_savoir.length}/200</p>
+                </div>
+
+                {[1, 2, 3].map(n => (
+                  <div key={n}>
+                    <Label>Lieu {n > 1 ? n : ''} {n > 1 ? '(optionnel)' : ''}</Label>
+                    <Input
+                      placeholder="Ex: Gymnase des Tilleuls, 12 rue de la Paix, Lyon"
+                      value={(formData as any)[`venue_${n}`]}
+                      onChange={(e) => setFormData({ ...formData, [`venue_${n}`]: e.target.value })}
+                      className="rounded-xl"
+                    />
+                  </div>
+                ))}
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.accessibility_pmr}
+                    onChange={(e) => setFormData({ ...formData, accessibility_pmr: e.target.checked })}
+                    className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">♿️ Accès PMR disponible</span>
+                </label>
               </div>
             </div>
           </div>
