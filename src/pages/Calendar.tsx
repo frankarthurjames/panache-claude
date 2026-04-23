@@ -21,18 +21,29 @@ const CalendarPage = () => {
   useEffect(() => {
     const fetch = async () => {
       try {
-        const { data: rows } = await supabase
+        const { data: rows, error } = await supabase
           .from('events')
           .select(`
             id, title, starts_at, ends_at,
             city, region, description, venue,
-            images, website,
+            images, website, sport_id,
             organizations(id, name, email, website),
-            sports(id, name, slug)
+            sports:sport_id(id, name, slug)
           `)
           .eq('status', 'published')
           .gte('starts_at', new Date().toISOString())
           .order('starts_at', { ascending: true });
+
+        console.log('Events fetched:', rows?.length, error);
+
+        if (!rows?.length) {
+          const { data: debug } = await supabase
+            .from('events')
+            .select('id, title, status, starts_at')
+            .limit(5);
+          console.log('Debug events:', debug);
+        }
+
         setData(rows || []);
       } catch (err) {
         console.error(err);
