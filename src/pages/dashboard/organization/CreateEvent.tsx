@@ -66,6 +66,7 @@ const CreateEvent = () => {
     longitude: null as number | null,
     capacity: "",
     // Step 2 extra: Détails pratiques
+    website: "",
     public_type: "",
     level: "",
     venue_type: "",
@@ -318,6 +319,7 @@ const CreateEvent = () => {
         sport_id: formData.sportId || null,
         images: formData.images,
         status: formData.status,
+        website: formData.website || null,
         latitude: formData.latitude ?? null,
         longitude: formData.longitude ?? null,
         public_type: formData.public_type || null,
@@ -534,6 +536,18 @@ const CreateEvent = () => {
                 value={formData.city}
                 onChange={(e) => handleInputChange("city", e.target.value)}
                 placeholder="Ex: Lyon"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="website">Site web de l'événement (optionnel)</Label>
+              <Input
+                id="website"
+                type="url"
+                placeholder="https://..."
+                value={formData.website}
+                onChange={(e) => handleInputChange("website", e.target.value)}
+                className="rounded-xl"
               />
             </div>
 

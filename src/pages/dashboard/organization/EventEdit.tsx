@@ -214,6 +214,7 @@ const EventEdit = () => {
           ends_at: event.ends_at,
           images: finalImages,
           status: event.status,
+          website: event.website || null,
         })
         .eq('id', eventId);
 
@@ -437,6 +438,19 @@ const EventEdit = () => {
                     disabled={isFinished}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website">Site web de l'événement (optionnel)</Label>
+                <Input
+                  id="website"
+                  type="url"
+                  placeholder="https://..."
+                  value={event.website || ''}
+                  onChange={(e) => setEvent({ ...event, website: e.target.value })}
+                  className="rounded-xl border-gray-200 focus:ring-orange-500/20"
+                  disabled={isFinished}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
