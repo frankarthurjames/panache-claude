@@ -25,7 +25,7 @@ export const FeaturedEvents = () => {
           .limit(3);
         setEvents(data || []);
       } catch (err) {
-        console.error("Error fetching featured events:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -60,16 +60,53 @@ export const FeaturedEvents = () => {
     <section style={{ padding: "80px 0", background: "#FFFFFF" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px" }}>
 
+        {/* Header — titre avec accent orange */}
         <div className="reveal" style={{ marginBottom: "28px" }}>
           <span className="eyebrow">Sélection éditoriale</span>
-          <h2 className="sec-title">À la une</h2>
+          <h2 style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 700, fontStyle: "italic",
+            fontSize: "clamp(32px, 3.8vw, 48px)",
+            letterSpacing: "-0.03em", lineHeight: 1.1,
+            color: "#141414",
+            display: "flex", alignItems: "center", gap: "12px",
+          }}>
+            À la une
+            <span style={{
+              display: "inline-block",
+              width: "36px", height: "4px",
+              background: "#FF6B1A",
+              borderRadius: "2px",
+              marginBottom: "4px",
+              flexShrink: 0,
+            }} />
+          </h2>
         </div>
 
+        {/* Zone noire avec liseré orange en haut */}
         <div
           className="reveal"
-          style={{ background: "#141414", borderRadius: "20px", padding: "28px" }}
+          style={{
+            background: "#141414",
+            borderRadius: "20px",
+            padding: "28px",
+            borderTop: "3px solid #FF6B1A",
+            position: "relative",
+            overflow: "hidden",
+          }}
         >
-          <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: "14px" }}>
+          {/* Radial orange subtil en fond */}
+          <div style={{
+            position: "absolute", inset: 0, pointerEvents: "none",
+            background: "radial-gradient(ellipse 50% 60% at 100% 0%, rgba(255,107,26,0.08) 0%, transparent 70%)",
+          }} />
+
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1.7fr 1fr",
+            gap: "14px",
+            position: "relative", zIndex: 1,
+          }}>
 
             {/* Grande card */}
             {main && (
@@ -77,49 +114,68 @@ export const FeaturedEvents = () => {
                 onClick={() => navigate(`/events/${main.id}`)}
                 style={{
                   borderRadius: "14px", overflow: "hidden",
-                  background: "#1E1E1E", border: "1px solid rgba(255,255,255,0.08)",
+                  background: "#1E1E1E",
+                  border: "1.5px solid rgba(255,255,255,0.08)",
                   display: "flex", flexDirection: "column",
                   cursor: "pointer", textAlign: "left", padding: 0,
-                  transition: "transform 0.15s cubic-bezier(0.22,1,0.36,1)",
+                  transition: "transform 0.15s cubic-bezier(0.22,1,0.36,1), border-color 0.15s",
                 }}
-                onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-4px)")}
-                onMouseLeave={e => (e.currentTarget.style.transform = "none")}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                  e.currentTarget.style.borderColor = "rgba(255,107,26,0.5)";
+                  const img = e.currentTarget.querySelector("img") as HTMLImageElement;
+                  if (img) img.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                  const img = e.currentTarget.querySelector("img") as HTMLImageElement;
+                  if (img) img.style.transform = "none";
+                }}
               >
+                {/* Image */}
                 <div style={{ height: "240px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
                   <img
                     src={getImage(main)}
                     alt={cleanTitle(main.title)}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)", display: "block" }}
-                    onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
-                    onMouseLeave={e => (e.currentTarget.style.transform = "none")}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)" }}
                   />
-                  <div className="overlay-featured" style={{ position: "absolute", inset: 0 }} />
-                  <span
-                    className="sport-chip"
-                    style={{ position: "absolute", top: "12px", left: "12px", background: "#FF6B1A", color: "white" }}
-                  >
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)" }} />
+                  <span style={{
+                    position: "absolute", top: "12px", left: "12px",
+                    background: "#FF6B1A", color: "white",
+                    fontSize: "9px", fontWeight: 700, letterSpacing: "0.08em",
+                    textTransform: "uppercase", padding: "4px 10px", borderRadius: "50px",
+                  }}>
                     {getSport(main)}
                   </span>
                 </div>
-                <div style={{ padding: "18px 20px", flex: 1 }}>
-                  <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.45)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>
+
+                {/* Corps */}
+                <div style={{ padding: "18px 20px 20px", flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.45)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                     {getDate(main)}{main.city ? ` · ${main.city}` : ""}
                   </p>
-                  <h3
-                    style={{
-                      fontFamily: "'Poppins', sans-serif", fontWeight: 700,
-                      fontSize: "17px", color: "white",
-                      letterSpacing: "-0.02em", lineHeight: 1.3, marginBottom: "8px",
-                      display: "-webkit-box", WebkitLineClamp: 2,
-                      WebkitBoxOrient: "vertical", overflow: "hidden",
-                    }}
-                  >
+                  <h3 style={{
+                    fontFamily: "'Poppins', sans-serif", fontWeight: 700,
+                    fontSize: "18px", color: "white",
+                    letterSpacing: "-0.02em", lineHeight: 1.3,
+                    display: "-webkit-box", WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical", overflow: "hidden",
+                  }}>
                     {cleanTitle(main.title)}
                   </h3>
-                  {isFree(main)
-                    ? <span style={{ fontSize: "11px", fontWeight: 600, color: "#4ADE80" }}>Gratuit</span>
-                    : getPrice(main) && <span style={{ fontSize: "11px", fontWeight: 600, color: "#FF6B1A" }}>{getPrice(main)}</span>
-                  }
+                  {/* Footer card — prix + voir */}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "auto",
+                  }}>
+                    {isFree(main)
+                      ? <span style={{ fontSize: "11px", fontWeight: 600, color: "#4ADE80", background: "rgba(74,222,128,0.12)", padding: "4px 10px", borderRadius: "50px" }}>Gratuit</span>
+                      : <span style={{ fontSize: "11px", fontWeight: 600, color: "#FF6B1A", background: "rgba(255,107,26,0.12)", padding: "4px 10px", borderRadius: "50px" }}>{getPrice(main)}</span>
+                    }
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "#FF6B1A" }}>Voir →</span>
+                  </div>
                 </div>
               </button>
             )}
@@ -133,51 +189,68 @@ export const FeaturedEvents = () => {
                     onClick={() => navigate(`/events/${e.id}`)}
                     style={{
                       borderRadius: "12px", overflow: "hidden",
-                      background: "#1E1E1E", border: "1px solid rgba(255,255,255,0.08)",
+                      background: "#1E1E1E",
+                      border: "1.5px solid rgba(255,255,255,0.08)",
                       flex: 1, display: "flex", flexDirection: "column",
                       cursor: "pointer", textAlign: "left", padding: 0,
-                      transition: "transform 0.15s cubic-bezier(0.22,1,0.36,1)",
+                      transition: "transform 0.15s cubic-bezier(0.22,1,0.36,1), border-color 0.15s",
                     }}
-                    onMouseEnter={el => (el.currentTarget.style.transform = "translateY(-3px)")}
-                    onMouseLeave={el => (el.currentTarget.style.transform = "none")}
+                    onMouseEnter={el => {
+                      el.currentTarget.style.transform = "translateY(-3px)";
+                      el.currentTarget.style.borderColor = "rgba(255,107,26,0.5)";
+                      const img = el.currentTarget.querySelector("img") as HTMLImageElement;
+                      if (img) img.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={el => {
+                      el.currentTarget.style.transform = "none";
+                      el.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                      const img = el.currentTarget.querySelector("img") as HTMLImageElement;
+                      if (img) img.style.transform = "none";
+                    }}
                   >
-                    <div style={{ height: "120px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+                    {/* Image */}
+                    <div style={{ height: "110px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
                       <img
                         src={getImage(e)}
                         alt={cleanTitle(e.title)}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)" }}
                       />
-                      <div className="overlay-featured" style={{ position: "absolute", inset: 0 }} />
-                      <span
-                        className="sport-chip"
-                        style={{
-                          position: "absolute", top: "10px", left: "10px",
-                          background: "#FF6B1A", color: "white",
-                          fontSize: "8px", padding: "3px 8px",
-                        }}
-                      >
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)" }} />
+                      <span style={{
+                        position: "absolute", top: "8px", left: "10px",
+                        background: "#FF6B1A", color: "white",
+                        fontSize: "8px", fontWeight: 700, letterSpacing: "0.08em",
+                        textTransform: "uppercase", padding: "3px 8px", borderRadius: "50px",
+                      }}>
                         {getSport(e)}
                       </span>
                     </div>
-                    <div style={{ padding: "14px 16px", flex: 1 }}>
-                      <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.4)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "5px" }}>
+
+                    {/* Corps */}
+                    <div style={{ padding: "12px 14px 14px", flex: 1, display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.4)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                         {getDate(e)}{e.city ? ` · ${e.city}` : ""}
                       </p>
-                      <h3
-                        style={{
-                          fontFamily: "'Poppins', sans-serif", fontWeight: 700,
-                          fontSize: "13px", color: "white",
-                          letterSpacing: "-0.01em", lineHeight: 1.35,
-                          display: "-webkit-box", WebkitLineClamp: 2,
-                          WebkitBoxOrient: "vertical", overflow: "hidden",
-                        }}
-                      >
+                      <h3 style={{
+                        fontFamily: "'Poppins', sans-serif", fontWeight: 700,
+                        fontSize: "13px", color: "white",
+                        letterSpacing: "-0.01em", lineHeight: 1.35,
+                        display: "-webkit-box", WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical", overflow: "hidden",
+                      }}>
                         {cleanTitle(e.title)}
                       </h3>
-                      {isFree(e)
-                        ? <span style={{ fontSize: "10px", fontWeight: 600, color: "#4ADE80", marginTop: "4px", display: "block" }}>Gratuit</span>
-                        : getPrice(e) && <span style={{ fontSize: "10px", fontWeight: 600, color: "#FF6B1A", marginTop: "4px", display: "block" }}>{getPrice(e)}</span>
-                      }
+                      {/* Footer */}
+                      <div style={{
+                        display: "flex", alignItems: "center", justifyContent: "space-between",
+                        paddingTop: "8px", borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: "auto",
+                      }}>
+                        {isFree(e)
+                          ? <span style={{ fontSize: "10px", fontWeight: 600, color: "#4ADE80", background: "rgba(74,222,128,0.12)", padding: "3px 8px", borderRadius: "50px" }}>Gratuit</span>
+                          : <span style={{ fontSize: "10px", fontWeight: 600, color: "#FF6B1A", background: "rgba(255,107,26,0.12)", padding: "3px 8px", borderRadius: "50px" }}>{getPrice(e)}</span>
+                        }
+                        <span style={{ fontSize: "11px", fontWeight: 600, color: "#FF6B1A" }}>Voir →</span>
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -186,6 +259,13 @@ export const FeaturedEvents = () => {
           </div>
         </div>
       </div>
+
+      {/* Responsive */}
+      <style>{`
+        @media (max-width: 768px) {
+          .featured-grid-inner { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </section>
   );
 };
