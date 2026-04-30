@@ -1,52 +1,90 @@
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Linkedin } from "lucide-react";
-import panacheLogoText from "@/assets/panache-logo-text.png";
 
 export const Footer = () => {
   return (
-    <footer className="bg-black text-white py-8 border-t border-white/10">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-center h-full relative">
-
-          {/* Left: Links */}
-          <div className="flex space-x-8 mb-8 md:mb-0 text-sm font-medium text-white z-10">
-            <Link to="/about" className="hover:text-gray-300 transition-colors">À propos</Link>
-            <Link to="/legal/mentions" className="hover:text-gray-300 transition-colors">Mentions légales</Link>
-          </div>
-
-          {/* Center: Logo & Copyright */}
-          <div className="flex flex-col items-center md:absolute md:left-1/2 md:transform md:-translate-x-1/2 z-0 mb-8 md:mb-0">
-            <div className="mb-2">
-              {/* Using text for now to match the "Panache" orange look if image doesn't fit, 
-                   but user said "avec le logo etc". The image provided shows orange text "Panache" with a spark.
-                   I'll use the image asset if available or style text. 
-                   The previous Logo component uses an image. Let's try to use that or styled text.
-                   The visual has "Panache" in orange.
-               */}
-              <span className="text-2xl font-bold text-[#FF9933] italic flex items-center">
-                Panache
-                {/* Spark icon could go here */}
-              </span>
-            </div>
-            <div className="text-[10px] text-white font-medium">
-              Tout droit réservés - Panache {new Date().getFullYear()}
-            </div>
-          </div>
-
-          {/* Right: Social Icons */}
-          <div className="flex space-x-4 z-10">
-            <a href="#" className="bg-white rounded-full p-2 text-black hover:bg-gray-200 transition-colors">
-              <Linkedin className="h-4 w-4" />
-            </a>
-            <a href="#" className="bg-white rounded-full p-2 text-black hover:bg-gray-200 transition-colors">
-              <Instagram className="h-4 w-4" />
-            </a>
-            <a href="#" className="bg-white rounded-full p-2 text-black hover:bg-gray-200 transition-colors">
-              <Facebook className="h-4 w-4" />
-            </a>
-          </div>
-        </div>
+    <footer
+      style={{
+        background: "#1E1E1E",
+        padding: "32px 40px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: "16px",
+      }}
+    >
+      {/* Logo */}
+      <div
+        style={{
+          fontFamily: "'Poppins', sans-serif",
+          fontSize: "18px",
+          fontWeight: 800,
+          color: "#FF6B1A",
+          letterSpacing: "-0.5px",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+        }}
+      >
+        <span
+          style={{
+            width: "6px",
+            height: "6px",
+            background: "#FF6B1A",
+            borderRadius: "50%",
+            opacity: 0.7,
+            display: "inline-block",
+          }}
+        />
+        Panache
       </div>
+
+      {/* Liens */}
+      <nav
+        style={{
+          display: "flex",
+          gap: "24px",
+          flexWrap: "wrap",
+          justifyContent: "center",
+        }}
+      >
+        {[
+          { label: "Événements",       to: "/events" },
+          { label: "Clubs",            to: "/clubs" },
+          { label: "Calendrier",       to: "/calendar" },
+          { label: "Organisateurs",    to: "/organisateurs" },
+          { label: "À propos",         to: "/about" },
+          { label: "Mentions légales", to: "/legal/mentions-legales" },
+          { label: "Contact",          to: "/contact" },
+        ].map(({ label, to }) => (
+          <Link
+            key={to}
+            to={to}
+            style={{
+              fontSize: "13px",
+              color: "rgba(255,255,255,0.38)",
+              textDecoration: "none",
+              transition: "color 0.15s",
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.38)")}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Copyright */}
+      <p
+        style={{
+          fontSize: "12px",
+          color: "rgba(255,255,255,0.2)",
+          fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
+        © Panache 2026
+      </p>
     </footer>
   );
 };
