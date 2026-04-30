@@ -39,36 +39,40 @@ export const RegionsGrid = () => {
     fetchRegions();
   }, []);
 
-  if (loading) {
-    return (
-      <section className="py-14 px-4 sm:px-6 lg:px-8">
-        <div className="container mx-auto flex justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
-        </div>
-      </section>
-    );
-  }
+  if (loading) return (
+    <section className="py-14 px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto flex justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+      </div>
+    </section>
+  );
 
   if (regions.length === 0) return null;
 
   return (
     <section className="py-14">
       <div className="px-4 sm:px-6 lg:px-8">
-        <h2 className="font-poppins font-extrabold text-[#1A1A1A] tracking-[-0.02em] mb-6 max-w-7xl mx-auto"
-            style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)' }}>
-          À la découverte des régions
-        </h2>
+        <div className="max-w-7xl mx-auto mb-6">
+          <h2
+            className="font-poppins font-extrabold text-[#1A1A1A] tracking-[-0.02em]"
+            style={{ fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)" }}
+          >
+            À la découverte des régions
+          </h2>
+          <p className="text-[#5A5A5A] text-sm mt-1">
+            Explorez les événements sportifs près de chez vous ou partout en France.
+          </p>
+        </div>
       </div>
 
-      {/* Scroll horizontal */}
       <div className="overflow-x-auto scrollbar-hide pb-2">
-        <div className="flex gap-3 px-4 sm:px-6 lg:px-8" style={{ width: 'max-content' }}>
+        <div className="flex gap-3 px-4 sm:px-6 lg:px-8" style={{ width: "max-content" }}>
           {regions.map((region) => (
             <button
               key={region.name}
               onClick={() => navigate(`/events?region=${encodeURIComponent(region.name)}`)}
               className="group relative flex-shrink-0 rounded-xl overflow-hidden text-left"
-              style={{ width: '140px', height: '88px' }}
+              style={{ width: "140px", height: "88px" }}
             >
               <img
                 src={region.image}
@@ -81,7 +85,7 @@ export const RegionsGrid = () => {
                   {region.name}
                 </p>
                 <p className="text-white/70 text-[10px] mt-0.5">
-                  {region.count} événement{region.count > 1 ? 's' : ''}
+                  {region.count} événement{region.count > 1 ? "s" : ""}
                 </p>
               </div>
             </button>
