@@ -1,46 +1,27 @@
-
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { EventCard } from "@/components/EventCard";
-import {
-  MapPin,
-  Globe,
-  Loader2,
-  Users,
-  BarChart2,
-  Building2,
-  Car,
-  Bus,
-  Train,
-  Accessibility,
-  Clock
-} from "lucide-react";
+import { Loader2, MapPin, Copy, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+  Carousel, CarouselContent, CarouselItem,
+  CarouselNext, CarouselPrevious,
 } from "@/components/ui/carousel";
 import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
+  Dialog, DialogContent, DialogTrigger,
 } from "@/components/ui/dialog";
 import { SEO } from "@/components/SEO";
 import EventCheckout from "@/components/EventCheckout";
 
+const PANACHE_ORG_ID = '6f8c37be-e1f5-4a19-98c3-98946ea7d034';
+
 const EventDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [nearbyEvents, setNearbyEvents] = useState<any[]>([]);
@@ -57,28 +38,13 @@ const EventDetail = () => {
           .select(`
             *,
             organizations (
-              id,
-              name,
-              logo_url,
-              slug,
-              website,
-              address,
-              billing_email,
-              billing_country,
-              created_by_user_id
+              id, name, logo_url, slug, website, address,
+              billing_email, billing_country, created_by_user_id
             ),
             ticket_types (
-              id,
-              name,
-              price_cents,
-              currency,
-              quantity,
-              max_per_order
+              id, name, price_cents, currency, quantity, max_per_order
             ),
-            registrations (
-              id,
-              ticket_type_id
-            )
+            registrations ( id, ticket_type_id )
           `)
           .eq('id', id)
           .single();
@@ -86,7 +52,6 @@ const EventDetail = () => {
         if (error) throw error;
         setEvent(data);
 
-        // Fetch published events count for this organization
         if (data?.organization_id) {
           const { count } = await supabase
             .from('events')
@@ -96,17 +61,15 @@ const EventDetail = () => {
           setOrgEventsCount(count ?? 0);
         }
 
-        // Fetch nearby events: same city first, fallback to any city
-        const nearbyBase = supabase
+        const { data: nearby } = await supabase
           .from('events')
           .select('id, title, city, starts_at, images, ticket_types(*), sports(name)')
           .eq('status', 'published')
           .neq('id', id)
           .gte('starts_at', new Date().toISOString())
           .order('starts_at', { ascending: true })
-          .limit(3);
-
-        const { data: nearby } = await nearbyBase.eq('city', data.city || '');
+          .limit(3)
+          .eq('city', data.city || '');
 
         if (nearby && nearby.length > 0) {
           setNearbyEvents(nearby);
@@ -121,7 +84,6 @@ const EventDetail = () => {
             .limit(3);
           setNearbyEvents(fallback || []);
         }
-
       } catch (err) {
         console.error(err);
       } finally {
@@ -131,17 +93,21 @@ const EventDetail = () => {
     fetchEvent();
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: "#F5F4F2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Loader2 style={{ height: "32px", width: "32px", color: "#F97316" }} className="animate-spin" />
+    </div>
+  );
 
-  if (!event) return <div>Événement non trouvé</div>;
+  if (!event) return (
+    <div style={{ minHeight: "100vh", background: "#F5F4F2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ color: "#5A5A5A" }}>Événement non trouvé</p>
+    </div>
+  );
 
-  const eventDate = new Date(event.starts_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const eventDate = new Date(event.starts_at).toLocaleDateString('fr-FR', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
   const eventTime = (() => {
     const d = new Date(event.starts_at);
     return d.getHours() !== 0 || d.getMinutes() !== 0
@@ -149,468 +115,469 @@ const EventDetail = () => {
       : null;
   })();
 
-  // Calculate minimum price
-  const minPrice = event.ticket_types && event.ticket_types.length > 0
+  const minPrice = event.ticket_types?.length > 0
     ? Math.min(...event.ticket_types.map((t: any) => t.price_cents)) / 100
     : null;
 
   const organization = event.organizations;
-  const PANACHE_ORG_ID = '6f8c37be-e1f5-4a19-98c3-98946ea7d034';
   const showClaimBanner = event.organization_id === PANACHE_ORG_ID;
+  const cleanTitle = event.title?.replace(/^\[.*?\]\s*/, '') || '';
+  const sport = event.sport?.name || event.sports?.name || null;
 
-  const ClaimBanner = () => (
-    <div className="border border-orange-200 bg-orange-50 rounded-xl p-4 mt-6 flex items-center justify-between gap-4">
-      <div>
-        <p className="font-semibold text-gray-900 text-sm">
-          Vous êtes l'organisateur de cet événement ?
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          Personnalisez cette page et donnez plus de visibilité à votre événement.
-        </p>
-      </div>
-      <a
-        href={`/claim-event/${event.id}`}
-        className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium px-4 py-2 rounded-full whitespace-nowrap transition-colors flex-shrink-0"
-      >
-        Revendiquer →
-      </a>
-    </div>
-  );
+  const heroImage = event.images?.length > 0
+    ? event.images[0]
+    : "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1600&auto=format&fit=crop&q=80";
+
+  const totalRemaining = event.ticket_types?.reduce((acc: number, t: any) => {
+    const sold = (event.registrations || []).filter((r: any) => r.ticket_type_id === t.id).length;
+    return acc + Math.max(0, t.quantity - sold);
+  }, 0) ?? 0;
+
+  const totalCapacity = event.ticket_types?.reduce((acc: number, t: any) => acc + t.quantity, 0) ?? 0;
+  const isLowStock = totalCapacity > 0 && totalRemaining / totalCapacity < 0.2;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareUrl = encodeURIComponent(window.location.href);
+  const shareTitle = encodeURIComponent(cleanTitle);
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div style={{ minHeight: "100vh", background: "#F5F4F2" }}>
       <SEO
-        title={event.title}
-        description={event.description?.substring(0, 160) || `Réservez votre place pour ${event.title} le ${eventDate}.`}
-        image={event.images?.[0]}
+        title={cleanTitle}
+        description={event.description?.slice(0, 160) || `${cleanTitle} — ${eventDate}`}
       />
-      <Navbar variant="orange" />
+      <Navbar />
 
-      {/* Slanted Hero Section */}
-      <div className="relative h-[350px] sm:h-[500px] overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src={event.images?.[0] || "https://images.unsplash.com/photo-1552674605-4694559e5bc7?w=1600&q=80"}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/40" />
-        </div>
-
-        {/* Slanted bottom edge */}
-        <div
-          className="absolute bottom-0 left-0 w-full h-24 bg-white"
-          style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}
+      {/* HERO */}
+      <div style={{ position: "relative", height: "520px", overflow: "hidden", background: "#0A0A0A" }}>
+        <img
+          src={heroImage}
+          alt={cleanTitle}
+          style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.7 }}
         />
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(to top, rgba(10,10,10,0.92) 0%, rgba(10,10,10,0.4) 50%, rgba(10,10,10,0.15) 100%)"
+        }} />
 
-        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center text-white pb-20 pt-16 sm:pt-0">
-          {event.title.match(/^\[(.*?)\]/) && (
-            <Badge className="w-fit mb-4 bg-orange-500 hover:bg-orange-600 text-white border-0 py-1 px-4 text-sm font-bold rounded-full shadow-lg">
-              {event.title.match(/^\[(.*?)\]/)?.[1]}
-            </Badge>
-          )}
-          <h1 className="text-4xl md:text-6xl font-bold mb-2">
-            {event.title.replace(/^\[.*?\]\s*/, '')}
-          </h1>
-          <div className="text-xl md:text-2xl font-medium opacity-90">
-            {eventDate}{eventTime ? ` · ${eventTime}` : ''} | {event.city || "Lieu à confirmer"}
+        {sport && (
+          <div style={{ position: "absolute", top: "100px", left: "32px" }}>
+            <span style={{
+              background: "#F97316", color: "white",
+              fontSize: "11px", fontWeight: 700,
+              letterSpacing: "0.08em", textTransform: "uppercase",
+              padding: "6px 14px", borderRadius: "100px"
+            }}>
+              {sport}
+            </span>
           </div>
+        )}
 
-          <div className="flex flex-wrap gap-3 mt-6">
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 32px 36px" }}>
+          <h1
+            className="font-poppins font-extrabold text-white"
+            style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", letterSpacing: "-0.03em", lineHeight: 1.06, marginBottom: "12px", maxWidth: "700px" }}
+          >
+            {cleanTitle}
+          </h1>
+          <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "15px", fontWeight: 500, marginBottom: "16px" }}>
+            {eventDate}{eventTime ? ` · ${eventTime}` : ''}{event.city ? ` · ${event.city}` : ''}
+          </p>
+
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(`${event.title.replace(/^\[.*?\]\s*/, '')} — ${eventDate} à ${event.city || ''} ${window.location.href}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+              href={`https://wa.me/?text=${shareTitle}%20${shareUrl}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: "#0A0A0A", color: "white",
+                fontSize: "12px", fontWeight: 600,
+                padding: "8px 14px", borderRadius: "100px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                textDecoration: "none"
+              }}
             >
               WhatsApp
             </a>
             <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+              href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: "#0A0A0A", color: "white",
+                fontSize: "12px", fontWeight: 600,
+                padding: "8px 14px", borderRadius: "100px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                textDecoration: "none"
+              }}
             >
               Facebook
             </a>
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
+              onClick={handleCopy}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: "#0A0A0A", color: "white",
+                fontSize: "12px", fontWeight: 600,
+                padding: "8px 14px", borderRadius: "100px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                cursor: "pointer"
               }}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
             >
-              {copied ? 'Lien copié !' : 'Copier le lien'}
+              {copied ? <Check style={{ width: 12, height: 12 }} /> : <Copy style={{ width: 12, height: 12 }} />}
+              {copied ? "Copié !" : "Copier le lien"}
             </button>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 lg:-mt-32 relative z-10 pb-24 md:pb-24 pb-36">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+      {/* Claim banner */}
+      {showClaimBanner && (
+        <div style={{ background: "#FFF7ED", borderBottom: "1px solid #FED7AA", padding: "12px 32px", textAlign: "center" }}>
+          <p style={{ fontSize: "13px", color: "#92400E" }}>
+            Cet événement, c'est vous ?{" "}
+            <a href={`/claim-event/${event.id}`} style={{ color: "#F97316", fontWeight: 600, textDecoration: "underline" }}>
+              Créez votre fiche gratuitement →
+            </a>
+          </p>
+        </div>
+      )}
 
-          {/* Left Column: Description */}
-          <div className="lg:col-span-2 pt-6 lg:pt-32 text-left">
-            <h2 className="text-2xl font-bold mb-6">Description</h2>
-            <div className="prose max-w-none text-gray-600 leading-relaxed mb-12 whitespace-pre-wrap">
-              {event.description || "Aucune description disponible."}
+      {/* BODY */}
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "48px 24px 96px", display: "grid", gridTemplateColumns: "1fr 340px", gap: "48px", alignItems: "start" }}>
+
+        {/* COLONNE GAUCHE */}
+        <div>
+
+          {event.description && (
+            <div style={{ marginBottom: "40px" }}>
+              <h2 className="font-poppins font-bold text-[#1A1A1A]"
+                  style={{ fontSize: "20px", letterSpacing: "-0.02em", marginBottom: "16px" }}>
+                Description
+              </h2>
+              <p style={{ color: "#1A1A1A", fontSize: "15px", lineHeight: 1.7, whiteSpace: "pre-line" }}>
+                {event.description}
+              </p>
             </div>
+          )}
 
-            {/* Détails pratiques */}
-            {(event.public_type || event.level || event.venue_type ||
-              event.transport_car || event.transport_public || event.transport_train ||
-              event.accessibility_pmr === true || event.registration_deadline) && (
-              <div className="border border-gray-100 rounded-2xl p-5 mt-8">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">Détails pratiques</h2>
-                <div className="space-y-3 text-sm text-gray-700">
-                  {event.public_type && (
-                    <div className="flex items-center gap-3">
-                      <Users className="h-4 w-4 text-orange-500 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wide">Public</p>
-                        <p className="font-medium">{event.public_type}</p>
-                      </div>
-                    </div>
-                  )}
-                  {event.level && (
-                    <div className="flex items-center gap-3">
-                      <BarChart2 className="h-4 w-4 text-orange-500 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wide">Niveau</p>
-                        <p className="font-medium">{event.level}</p>
-                      </div>
-                    </div>
-                  )}
-                  {event.venue_type && (
-                    <div className="flex items-center gap-3">
-                      <Building2 className="h-4 w-4 text-orange-500 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wide">Type de lieu</p>
-                        <p className="font-medium">{event.venue_type}</p>
-                      </div>
-                    </div>
-                  )}
-                  {(event.transport_car || event.transport_public || event.transport_train) && (
-                    <div className="flex items-start gap-3 pt-3 border-t border-gray-100">
-                      <Car className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Pour venir</p>
-                        <p className="font-medium">
-                          {[
-                            event.transport_car && 'Voiture',
-                            event.transport_public && 'Transport en commun',
-                            event.transport_train && 'Train',
-                          ].filter(Boolean).join(' · ')}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {event.accessibility_pmr === true && (
-                    <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                      <Accessibility className="h-4 w-4 text-orange-500 shrink-0" />
-                      <p className="font-medium">Accès PMR disponible</p>
-                    </div>
-                  )}
-                  {event.registration_deadline && (
-                    <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                      <Clock className="h-4 w-4 text-orange-500 shrink-0" />
-                      <div>
-                        <p className="text-xs text-gray-400 uppercase tracking-wide">Limite d'inscription</p>
-                        <p className="font-medium">
-                          {new Date(event.registration_deadline).toLocaleDateString('fr-FR', {
-                            day: 'numeric', month: 'long', year: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Carousel Section */}
-            {event.images && event.images.length > 1 && (
-              <div className="mt-12 px-12">
-                <Carousel className="w-full">
-                  <CarouselContent>
-                    {(event.images as string[]).slice(1).map((img, idx) => (
-                      <CarouselItem key={idx} className="md:basis-1/2 lg:basis-1/2">
-                        <div className="p-1">
-                          <Card className="border-0 overflow-hidden rounded-2xl">
-                            <CardContent className="flex aspect-video items-center justify-center p-0">
-                              <img
-                                src={img}
-                                alt={`${event.title} ${idx + 2}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious />
-                  <CarouselNext />
-                </Carousel>
-              </div>
-            )}
-
-            {/* Map Section — visible on desktop in left column */}
-            <div className="hidden lg:block">
-              {(event.venue || event.city) && (
-                <div className="mt-12">
-                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                    <MapPin className="h-6 w-6 text-primary" />
-                    Localisation
-                  </h2>
-                  <div className="w-full h-[400px] rounded-3xl overflow-hidden border-4 border-gray-50 shadow-sm transition-all hover:shadow-md">
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://www.google.com/maps?q=${encodeURIComponent(`${event.venue || ''} ${event.city || ''}`.trim())}&output=embed`}
-                    ></iframe>
+          {(event.audience || event.level || event.venue_type || event.transport || event.pmr_access !== undefined) && (
+            <div style={{ marginBottom: "40px" }}>
+              <h2 className="font-poppins font-bold text-[#1A1A1A]"
+                  style={{ fontSize: "20px", letterSpacing: "-0.02em", marginBottom: "20px" }}>
+                Détails pratiques
+              </h2>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                {event.audience && (
+                  <div>
+                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#5A5A5A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Public</p>
+                    <p style={{ fontSize: "14px", color: "#1A1A1A", fontWeight: 500 }}>{event.audience}</p>
                   </div>
-                  <div className="mt-4 flex flex-col gap-1">
-                    <p className="font-bold text-gray-900">{event.venue}</p>
-                    <p className="text-gray-500 font-medium">{event.city}</p>
+                )}
+                {event.level && (
+                  <div>
+                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#5A5A5A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Niveau</p>
+                    <p style={{ fontSize: "14px", color: "#1A1A1A", fontWeight: 500 }}>{event.level}</p>
+                  </div>
+                )}
+                {event.venue_type && (
+                  <div>
+                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#5A5A5A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Type de lieu</p>
+                    <p style={{ fontSize: "14px", color: "#1A1A1A", fontWeight: 500 }}>{event.venue_type}</p>
+                  </div>
+                )}
+                {event.transport && (
+                  <div>
+                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#5A5A5A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Pour venir</p>
+                    <p style={{ fontSize: "14px", color: "#1A1A1A", fontWeight: 500 }}>{event.transport}</p>
+                  </div>
+                )}
+                {event.pmr_access && (
+                  <div>
+                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#5A5A5A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Accessibilité</p>
+                    <p style={{ fontSize: "14px", color: "#1A1A1A", fontWeight: 500 }}>Accès PMR disponible</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {event.images?.length > 0 && (
+            <div style={{ marginBottom: "40px" }}>
+              <h2 className="font-poppins font-bold text-[#1A1A1A]"
+                  style={{ fontSize: "20px", letterSpacing: "-0.02em", marginBottom: "16px" }}>
+                Photos
+              </h2>
+              <Carousel className="w-full">
+                <CarouselContent>
+                  {event.images.map((img: string, idx: number) => (
+                    <CarouselItem key={idx} className="md:basis-1/2">
+                      <div style={{ borderRadius: "12px", overflow: "hidden", aspectRatio: "16/9" }}>
+                        <img src={img} alt={`Photo ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {event.images.length > 1 && <CarouselPrevious />}
+                {event.images.length > 1 && <CarouselNext />}
+              </Carousel>
+            </div>
+          )}
+
+          {(event.venue || event.city) && (
+            <div style={{ marginBottom: "40px" }}>
+              <h2 className="font-poppins font-bold text-[#1A1A1A]"
+                  style={{ fontSize: "20px", letterSpacing: "-0.02em", marginBottom: "16px" }}>
+                Localisation
+              </h2>
+              {event.venue && (
+                <div style={{ background: "white", borderRadius: "12px", border: "1px solid #E8E8E8", overflow: "hidden" }}>
+                  <iframe
+                    title="map"
+                    width="100%"
+                    height="280"
+                    style={{ border: 0, display: "block" }}
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(event.venue + (event.city ? ', ' + event.city : ''))}&output=embed`}
+                  />
+                  <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <MapPin style={{ width: 16, height: 16, color: "#F97316", flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: "14px", fontWeight: 600, color: "#1A1A1A" }}>{event.venue}</p>
+                      {event.city && <p style={{ fontSize: "13px", color: "#5A5A5A" }}>{event.city}</p>}
+                    </div>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venue + (event.city ? ', ' + event.city : ''))}`}
+                      target="_blank" rel="noopener noreferrer"
+                      style={{ marginLeft: "auto", fontSize: "12px", color: "#F97316", fontWeight: 600, textDecoration: "none" }}
+                    >
+                      Voir l'itinéraire →
+                    </a>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Map Section — on mobile, shown between carousel and booking card */}
-          <div className="lg:hidden lg:col-span-2 order-none">
-            {(event.venue || event.city) && (
-              <div>
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                  <MapPin className="h-6 w-6 text-primary" />
-                  Localisation
-                </h2>
-                <div className="w-full h-[300px] rounded-2xl overflow-hidden border border-border shadow-sm">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.google.com/maps?q=${encodeURIComponent(`${event.venue || ''} ${event.city || ''}`.trim())}&output=embed`}
-                  ></iframe>
+          {nearbyEvents.length > 0 && (
+            <div>
+              <h2 className="font-poppins font-bold text-[#1A1A1A]"
+                  style={{ fontSize: "20px", letterSpacing: "-0.02em", marginBottom: "20px" }}>
+                D'autres événements qui pourraient vous plaire
+              </h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+                {nearbyEvents.map((e: any) => {
+                  const img = e.images?.[0] || "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=80";
+                  const minP = e.ticket_types?.length > 0 ? Math.min(...e.ticket_types.map((t: any) => t.price_cents)) / 100 : 0;
+                  const priceDisplay = minP === 0 ? "Gratuit" : `À partir de ${minP.toFixed(0)}€`;
+                  return (
+                    <EventCard
+                      key={e.id}
+                      id={e.id}
+                      title={e.title}
+                      date={new Date(e.starts_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      location={e.city || ''}
+                      image={img}
+                      tag={(e.sports?.name || 'Sport').toUpperCase()}
+                      tagColor="bg-black"
+                      price={priceDisplay}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* SIDEBAR DROITE */}
+        <div style={{ position: "sticky", top: "96px" }}>
+          <div style={{ background: "white", borderRadius: "16px", border: "1px solid #E8E8E8", overflow: "hidden" }}>
+
+            <div style={{ padding: "24px 24px 20px", borderBottom: "1px solid #E8E8E8" }}>
+              {minPrice !== null ? (
+                <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                  <span className="font-poppins font-extrabold text-[#F97316]"
+                        style={{ fontSize: "42px", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                    {minPrice === 0 ? "Gratuit" : `${minPrice}€`}
+                  </span>
+                  {minPrice > 0 && (
+                    <span style={{ fontSize: "14px", color: "#5A5A5A", fontWeight: 500 }}>/ billet</span>
+                  )}
                 </div>
-                <div className="mt-3 flex flex-col gap-1">
-                  <p className="font-bold text-foreground">{event.venue}</p>
-                  <p className="text-muted-foreground font-medium">{event.city}</p>
+              ) : (
+                <p style={{ fontSize: "15px", color: "#5A5A5A" }}>Contactez l'organisateur</p>
+              )}
+
+              {isLowStock && totalRemaining > 0 && (
+                <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#EF4444" }}>
+                    ⚡ Plus que {totalRemaining} place{totalRemaining > 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {event.ticket_types?.length > 0 && (
+              <div style={{ padding: "20px 24px", borderBottom: "1px solid #E8E8E8" }}>
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#5A5A5A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>
+                  Billets disponibles
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {event.ticket_types.map((ticket: any) => {
+                    const sold = (event.registrations || []).filter((r: any) => r.ticket_type_id === ticket.id).length;
+                    const remaining = Math.max(0, ticket.quantity - sold);
+                    return (
+                      <div key={ticket.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#F5F4F2", borderRadius: "10px" }}>
+                        <div>
+                          <p style={{ fontSize: "13px", fontWeight: 600, color: "#1A1A1A" }}>{ticket.name}</p>
+                          <p style={{ fontSize: "11px", color: "#5A5A5A", marginTop: "2px" }}>
+                            {remaining > 0 ? `${remaining} restant${remaining > 1 ? 's' : ''}` : 'Épuisé'}
+                          </p>
+                        </div>
+                        <span style={{ fontSize: "14px", fontWeight: 700, color: "#F97316" }}>
+                          {ticket.price_cents === 0 ? "Gratuit" : `${(ticket.price_cents / 100).toFixed(2)}€`}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Right Column: Floating Details Card */}
-          <div className="lg:col-span-1">
-            <Card className="shadow-xl border-0 rounded-2xl overflow-hidden sticky top-24">
-              <div className="p-8">
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                    Détails de l'activité
-                  </h3>
-                  {minPrice !== null && (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-extrabold text-black">
-                        {minPrice === 0 ? 'Gratuit' : `${minPrice}€`}
-                      </span>
-                      {minPrice > 0 && <span className="text-gray-500 font-medium text-sm">/ billet</span>}
+            <div style={{ padding: "20px 24px" }}>
+              {event.ticket_types?.length > 0 ? (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button
+                      style={{
+                        width: "100%", height: "56px",
+                        background: "#F97316", color: "white",
+                        fontFamily: "DM Sans, sans-serif",
+                        fontSize: "16px", fontWeight: 700,
+                        borderRadius: "12px", border: "none",
+                        cursor: "pointer", transition: "background 0.2s"
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = "#EA6C0A")}
+                      onMouseLeave={e => (e.currentTarget.style.background = "#F97316")}
+                    >
+                      {minPrice === 0 ? "Réserver ma place gratuitement →" : `Réserver — À partir de ${minPrice}€ →`}
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
+                    <div className="max-h-[85vh] overflow-y-auto">
+                      <EventCheckout
+                        eventId={event.id}
+                        eventTitle={cleanTitle}
+                        eventDate={eventDate}
+                        ticketTypes={event.ticket_types || []}
+                        registrations={event.registrations || []}
+                      />
                     </div>
-                  )}
-                </div>
+                  </DialogContent>
+                </Dialog>
+              ) : organization?.billing_email ? (
+                <a
+                  href={`mailto:${organization.billing_email}?subject=Inscription — ${cleanTitle}`}
+                  style={{
+                    display: "block", width: "100%", height: "56px",
+                    background: "#F5F4F2", color: "#1A1A1A",
+                    fontSize: "15px", fontWeight: 600,
+                    borderRadius: "12px", border: "1px solid #E8E8E8",
+                    textDecoration: "none", textAlign: "center",
+                    lineHeight: "56px"
+                  }}
+                >
+                  Contacter l'organisateur
+                </a>
+              ) : null}
 
-                <div className="space-y-6">
-                  {/* Location Info */}
-                  <div className="space-y-3 py-4 border-y border-gray-100">
-                    {(event.venue || event.city) && (
-                      <div className="flex items-start gap-4">
-                        <MapPin className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-black leading-tight">
-                            {event.venue || "Lieu de l'événement"}
-                          </p>
-                          <p className="text-sm text-gray-500">{event.city}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              <p style={{ fontSize: "11px", color: "#5A5A5A", textAlign: "center", marginTop: "12px", lineHeight: 1.5 }}>
+                Paiement sécurisé · Billet reçu par email
+              </p>
+            </div>
 
-                  {/* Tickets List */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-bold text-black uppercase tracking-tight">
-                      Billets disponibles
-                    </h4>
-                    <div className="space-y-2">
-                      {event.ticket_types && event.ticket_types.length > 0 ? (
-                        event.ticket_types.map((ticket: any) => {
-                          const soldCount = (event.registrations || []).filter((r: any) => r.ticket_type_id === ticket.id).length;
-                          const remaining = Math.max(0, ticket.quantity - soldCount);
-
-                          return (
-                            <div key={ticket.id} className="flex justify-between items-center p-3 rounded-xl bg-gray-50 border border-gray-100">
-                              <div className="flex flex-col">
-                                <span className="font-semibold text-gray-800 text-sm">{ticket.name}</span>
-                                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">
-                                  {remaining > 0 ? `${remaining} Restants` : 'Épuisé'}
-                                </span>
-                              </div>
-                              <span className="font-bold text-orange-500 text-sm">
-                                {ticket.price_cents === 0 ? 'Gratuit' : `${ticket.price_cents / 100}€`}
-                              </span>
-                            </div>
-                          );
-                        })
-                      ) : null}
-                    </div>
-                  </div>
-
-                  {/* CTA Button */}
-                  {event.ticket_types && event.ticket_types.length > 0 ? (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          className={`w-full h-14 rounded-xl text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all ${
-                            event.ticket_types.some((t: any) => t.price_cents === 0)
-                              ? 'bg-green-500 hover:bg-green-600'
-                              : 'bg-orange-500 hover:bg-orange-600'
-                          }`}
-                        >
-                          {event.ticket_types.some((t: any) => t.price_cents === 0)
-                            ? 'Réserver ma place gratuitement →'
-                            : `Réserver — À partir de ${minPrice}€ →`}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
-                        <div className="max-h-[85vh] overflow-y-auto">
-                          <EventCheckout
-                            eventId={event.id}
-                            eventTitle={event.title}
-                            eventDate={eventDate}
-                            ticketTypes={event.ticket_types || []}
-                            registrations={event.registrations || []}
-                          />
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+            {organization && organization.id !== PANACHE_ORG_ID && (
+              <div style={{ padding: "20px 24px", borderTop: "1px solid #E8E8E8" }}>
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#5A5A5A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>
+                  Organisateur
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                  {organization.logo_url ? (
+                    <img src={organization.logo_url} alt={organization.name}
+                         style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover", border: "1px solid #E8E8E8" }} />
                   ) : (
-                    organization?.billing_email ? (
-                      <a
-                        href={`mailto:${organization.billing_email}?subject=Inscription — ${event.title.replace(/^\[.*?\]\s*/, '')}`}
-                        className="w-full h-14 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-base flex items-center justify-center transition-all"
-                      >
-                        Contacter l'organisateur
-                      </a>
-                    ) : null
-                  )}
-
-                  {/* Contact info simplified */}
-                  {organization?.billing_email && (
-                    <div className="pt-2 text-center text-[11px] text-gray-400">
-                      Besoin d'aide ? <a href={`mailto:${organization.billing_email}`} className="underline hover:text-orange-500">Contactez l'organisateur</a>
+                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#F5F4F2", border: "1px solid #E8E8E8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: "#1A1A1A" }}>
+                        {organization.name?.charAt(0)}
+                      </span>
                     </div>
                   )}
-
-                  {/* Organisation card */}
-                  {organization && (
-                    <div className="border border-gray-200 rounded-xl p-5 mt-6">
-                      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Organisateur</h3>
-                      <div className="flex items-center gap-3 mb-4">
-                        {organization.logo_url ? (
-                          <img src={organization.logo_url} alt={organization.name}
-                               className="w-12 h-12 rounded-full object-cover border border-gray-100" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-orange-500 font-bold text-lg">
-                              {organization.name?.charAt(0)}
-                            </span>
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-semibold text-gray-900">{organization.name}</p>
-                          <p className="text-sm text-gray-500">
-                            {orgEventsCount} événement{orgEventsCount > 1 ? 's' : ''} publié{orgEventsCount > 1 ? 's' : ''}
-                          </p>
-                        </div>
-                      </div>
-                      {(organization.slug || organization.id) && (
-                        <a href={`/clubs/${organization.slug || organization.id}`}
-                           className="block w-full text-center border border-orange-500 text-orange-500 hover:bg-orange-50 py-2 rounded-full text-sm font-medium transition-colors">
-                          Voir la page du club →
-                        </a>
-                      )}
-                    </div>
-                  )}
-
-                  {showClaimBanner && <ClaimBanner />}
+                  <div>
+                    <p style={{ fontSize: "14px", fontWeight: 600, color: "#1A1A1A" }}>{organization.name}</p>
+                    <p style={{ fontSize: "12px", color: "#5A5A5A" }}>{orgEventsCount} événement{orgEventsCount > 1 ? 's' : ''} publié{orgEventsCount > 1 ? 's' : ''}</p>
+                  </div>
                 </div>
+                {(organization.slug || organization.id) && (
+                  <a
+                    href={`/clubs/${organization.slug || organization.id}`}
+                    style={{
+                      display: "block", width: "100%", padding: "10px",
+                      textAlign: "center", fontSize: "13px", fontWeight: 600,
+                      color: "#1A1A1A", border: "1px solid #E8E8E8",
+                      borderRadius: "10px", textDecoration: "none",
+                      background: "white"
+                    }}
+                  >
+                    Voir la page du club →
+                  </a>
+                )}
               </div>
-            </Card>
-          </div>
-        </div>
-
-        {/* Nearby Section */}
-        <div className="mt-24">
-          <h2 className="text-2xl font-bold mb-8">A proximité</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {nearbyEvents.map((e) => {
-              const minPrice = e.ticket_types?.length > 0
-                ? Math.min(...e.ticket_types.map((t: any) => t.price_cents)) / 100
-                : 0;
-
-              const hasMultiplePrices = e.ticket_types && new Set(e.ticket_types.map((t: any) => t.price_cents)).size > 1;
-              const priceDisplay = minPrice > 0
-                ? (hasMultiplePrices ? `Dès ${minPrice.toFixed(0)}€` : `${minPrice.toFixed(0)}€`)
-                : 'Gratuit';
-
-              const tag = (e.sports?.name || 'Sport').toUpperCase();
-
-              return (
-                <EventCard
-                  key={e.id}
-                  id={e.id}
-                  title={e.title}
-                  date={new Date(e.starts_at).toLocaleDateString('fr-FR')}
-                  location={e.city || 'Lieu à confirmer'}
-                  image={e.images?.[0] || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop'}
-                  tag={tag}
-                  tagColor="bg-orange-500"
-                  price={priceDisplay}
-                />
-              );
-            })}
+            )}
           </div>
         </div>
       </div>
 
-      {/* Mobile CTA bar */}
-      {event.ticket_types && event.ticket_types.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-white border-t border-gray-200 px-4 py-3 md:hidden">
-          <div>
-            <span className="text-lg font-bold text-gray-900">
-              {minPrice === 0 ? 'Gratuit' : minPrice !== null ? `À partir de ${minPrice}€` : ''}
-            </span>
-          </div>
+      {/* BARRE MOBILE FIXE */}
+      <div
+        style={{
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          background: "white", borderTop: "1px solid #E8E8E8",
+          padding: "12px 16px", display: "flex", alignItems: "center",
+          justifyContent: "space-between", gap: "12px",
+          zIndex: 50
+        }}
+        className="md:hidden"
+      >
+        <div>
+          <p className="font-poppins font-extrabold text-[#F97316]"
+             style={{ fontSize: "22px", letterSpacing: "-0.02em", lineHeight: 1 }}>
+            {minPrice === null ? "—" : minPrice === 0 ? "Gratuit" : `${minPrice}€`}
+          </p>
+          {minPrice !== null && minPrice > 0 && (
+            <p style={{ fontSize: "11px", color: "#5A5A5A" }}>/ billet</p>
+          )}
+        </div>
+        {event.ticket_types?.length > 0 ? (
           <Dialog>
             <DialogTrigger asChild>
-              <button className="bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-full transition-colors">
-                Réserver →
+              <button style={{
+                flex: 1, maxWidth: "220px", height: "48px",
+                background: "#F97316", color: "white",
+                fontSize: "14px", fontWeight: 700,
+                borderRadius: "10px", border: "none", cursor: "pointer"
+              }}>
+                {minPrice === 0 ? "Réserver gratuitement" : "Réserver →"}
               </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-2xl bg-white border-0 shadow-2xl rounded-3xl p-0 overflow-hidden">
               <div className="max-h-[85vh] overflow-y-auto">
                 <EventCheckout
                   eventId={event.id}
-                  eventTitle={event.title}
+                  eventTitle={cleanTitle}
                   eventDate={eventDate}
                   ticketTypes={event.ticket_types || []}
                   registrations={event.registrations || []}
@@ -618,8 +585,21 @@ const EventDetail = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
-      )}
+        ) : organization?.billing_email ? (
+          <a
+            href={`mailto:${organization.billing_email}`}
+            style={{
+              flex: 1, maxWidth: "220px", height: "48px",
+              background: "#F5F4F2", color: "#1A1A1A",
+              fontSize: "14px", fontWeight: 600,
+              borderRadius: "10px", border: "1px solid #E8E8E8",
+              textDecoration: "none", textAlign: "center", lineHeight: "48px"
+            }}
+          >
+            Contacter
+          </a>
+        ) : null}
+      </div>
 
       <Footer />
     </div>
