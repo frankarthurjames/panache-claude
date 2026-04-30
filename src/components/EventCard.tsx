@@ -1,55 +1,179 @@
-import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+
+const FALLBACK = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=80";
 
 interface EventCardProps {
-  id: string | number;
+  id: string;
   title: string;
   date: string;
   location: string;
-  image: string;
-  tag: string;
-  tagColor: string;
-  price?: string;
+  image?: string;
+  tag?: string;
+  price?: string | number;
+  isFree?: boolean;
+  onClick?: () => void;
 }
 
-export const EventCard = ({ id, title, date, location, image, tag, tagColor, price }: EventCardProps) => {
+export const EventCard = ({
+  id,
+  title,
+  date,
+  location,
+  image,
+  tag,
+  price,
+  isFree,
+  onClick,
+}: EventCardProps) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (onClick) onClick();
+    else navigate(`/events/${id}`);
+  };
+
+  const cleanTitle = title?.replace(/^\[.*?\]\s*/, "") || "";
+
+  const priceDisplay = (() => {
+    if (isFree || price === 0 || price === "0" || price === "Gratuit") return { label: "Gratuit", free: true };
+    if (!price) return null;
+    if (typeof price === "number") return { label: `À partir de ${price}€`, free: false };
+    return { label: price, free: false };
+  })();
+
   return (
-    <Link
-      to={`/events/${id}`}
-      className="group relative aspect-[3/2] overflow-hidden rounded-3xl bg-muted block shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-[0.98]"
+    <button
+      onClick={handleClick}
+      style={{
+        background: "white",
+        borderRadius: "16px",
+        overflow: "hidden",
+        border: "none",
+        padding: 0,
+        cursor: "pointer",
+        textAlign: "left",
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
+        transition: "transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.12)";
+        const img = e.currentTarget.querySelector(".ec-img") as HTMLImageElement;
+        if (img) img.style.transform = "scale(1.05)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.boxShadow = "0 2px 16px rgba(0,0,0,0.07)";
+        const img = e.currentTarget.querySelector(".ec-img") as HTMLImageElement;
+        if (img) img.style.transform = "none";
+      }}
     >
-      <img
-        src={image}
-        alt={title}
-        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-      />
-
-      {/* Overlay gradient at bottom */}
-      <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-      {/* Tag top left */}
-      <div className="absolute top-6 left-6">
-        <Badge className={`bg-black text-white hover:bg-black/90 border-0 rounded-xl px-4 py-1.5 text-xs font-black tracking-widest uppercase shadow-xl`}>
-          {tag}
-        </Badge>
+      {/* Image */}
+      <div style={{
+        width: "100%",
+        height: "180px",
+        overflow: "hidden",
+        flexShrink: 0,
+        position: "relative",
+        background: "#F2EFE9",
+      }}>
+        <img
+          className="ec-img"
+          src={image || FALLBACK}
+          alt={cleanTitle}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+            transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)",
+          }}
+          onError={e => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }}
+        />
+        {/* Badge sport */}
+        {tag && (
+          <span style={{
+            position: "absolute",
+            top: "12px",
+            left: "12px",
+            background: "rgba(255,255,255,0.94)",
+            backdropFilter: "blur(6px)",
+            color: "#141414",
+            fontSize: "9px",
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            padding: "4px 10px",
+            borderRadius: "50px",
+          }}>
+            {tag}
+          </span>
+        )}
       </div>
 
-      {/* Content bottom left */}
-      <div className="absolute inset-x-0 bottom-6 px-6 text-white flex justify-between items-end">
-        <div className="max-w-[70%]">
-          <h3 className="text-2xl font-black leading-tight mb-2 line-clamp-2 [hyphens:none]">
-            {title.replace(/^\[.*?\]\s*/, '')}
-          </h3>
-          <p className="text-sm font-bold text-white/80 uppercase tracking-wider">
-            {date} • {location}
-          </p>
+      {/* Corps */}
+      <div style={{
+        padding: "14px 16px 16px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "6px",
+        flex: 1,
+      }}>
+        {/* Titre */}
+        <h3 style={{
+          fontFamily: "'Poppins', sans-serif",
+          fontWeight: 700,
+          fontSize: "15px",
+          color: "#141414",
+          lineHeight: 1.3,
+          letterSpacing: "-0.02em",
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          margin: 0,
+        }}>
+          {cleanTitle}
+        </h3>
+
+        {/* Date + lieu */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          {date && (
+            <span style={{ fontSize: "12px", color: "#6B6B6B", fontWeight: 400 }}>
+              {date}
+            </span>
+          )}
+          {location && (
+            <span style={{ fontSize: "12px", color: "#6B6B6B", fontWeight: 400 }}>
+              {location}
+            </span>
+          )}
         </div>
-        {price && (
-          <div className="bg-orange-500 text-white px-4 py-2 rounded-xl font-black text-base shadow-xl whitespace-nowrap mb-1">
-            {price}
+
+        {/* Footer prix */}
+        {priceDisplay && (
+          <div style={{ marginTop: "auto", paddingTop: "10px" }}>
+            <span style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              color: priceDisplay.free ? "#166534" : "#9A3412",
+              background: priceDisplay.free ? "#DCFCE7" : "#FFF2EB",
+              padding: "4px 10px",
+              borderRadius: "50px",
+              display: "inline-block",
+            }}>
+              {priceDisplay.label}
+            </span>
           </div>
         )}
       </div>
-    </Link>
+    </button>
   );
 };
+
+export default EventCard;
