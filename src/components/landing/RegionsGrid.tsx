@@ -36,15 +36,14 @@ export const RegionsGrid = () => {
         setLoading(false);
       }
     };
-
     fetchRegions();
   }, []);
 
   if (loading) {
     return (
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <section className="py-14 px-4 sm:px-6 lg:px-8">
         <div className="container mx-auto flex justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
         </div>
       </section>
     );
@@ -53,30 +52,35 @@ export const RegionsGrid = () => {
   if (regions.length === 0) return null;
 
   return (
-    <section className="py-16">
+    <section className="py-14">
       <div className="px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold mb-8 text-gray-900 max-w-7xl mx-auto">
+        <h2 className="font-poppins font-extrabold text-[#1A1A1A] tracking-[-0.02em] mb-6 max-w-7xl mx-auto"
+            style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)' }}>
           À la découverte des régions
         </h2>
       </div>
-      <div className="overflow-x-auto pb-4 scrollbar-hide">
-        <div className="flex gap-4 px-4 sm:px-6 lg:px-8" style={{ width: 'max-content' }}>
+
+      {/* Scroll horizontal */}
+      <div className="overflow-x-auto scrollbar-hide pb-2">
+        <div className="flex gap-3 px-4 sm:px-6 lg:px-8" style={{ width: 'max-content' }}>
           {regions.map((region) => (
             <button
               key={region.name}
               onClick={() => navigate(`/events?region=${encodeURIComponent(region.name)}`)}
-              className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0 text-left"
-              style={{ width: '160px', height: '200px' }}
+              className="group relative flex-shrink-0 rounded-xl overflow-hidden text-left"
+              style={{ width: '140px', height: '88px' }}
             >
               <img
                 src={region.image}
                 alt={region.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="text-white font-bold text-base leading-tight">{region.name}</p>
-                <p className="text-white/80 text-xs mt-1">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/80 via-[#0A0A0A]/10 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-3">
+                <p className="text-white font-bold text-xs leading-tight line-clamp-2">
+                  {region.name}
+                </p>
+                <p className="text-white/70 text-[10px] mt-0.5">
                   {region.count} événement{region.count > 1 ? 's' : ''}
                 </p>
               </div>
