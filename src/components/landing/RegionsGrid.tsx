@@ -40,85 +40,165 @@ export const RegionsGrid = () => {
   }, []);
 
   if (loading) return (
-    <section style={{ padding: "56px 0" }}>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <Loader2 style={{ height: "32px", width: "32px", color: "#F97316" }} className="animate-spin" />
+    <section style={{ padding: "80px 0", background: "#FAF8F5" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px", display: "flex", justifyContent: "center" }}>
+        <Loader2 style={{ width: 32, height: 32, color: "#FF6B1A" }} className="animate-spin" />
       </div>
     </section>
   );
 
   if (regions.length === 0) return null;
 
-  return (
-    <section style={{ padding: "56px 0" }}>
-      <div style={{ padding: "0 24px", maxWidth: "1280px", margin: "0 auto 24px" }}>
-        <h2
-          className="font-poppins font-extrabold text-[#1A1A1A]"
-          style={{ fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)", letterSpacing: "-0.02em", marginBottom: "4px" }}
-        >
-          À la découverte des régions
-        </h2>
-        <p style={{ color: "#5A5A5A", fontSize: "14px", marginTop: "4px" }}>
-          Explorez les événements sportifs près de chez vous ou partout en France.
-        </p>
-      </div>
+  const [featured, ...rest] = regions.slice(0, 4);
 
-      <div style={{ overflowX: "auto", paddingBottom: "8px", WebkitOverflowScrolling: "touch" }}>
-        <div style={{ display: "flex", gap: "12px", padding: "0 24px", width: "max-content" }}>
-          {regions.map((region) => (
+  return (
+    <section style={{ padding: "80px 0", background: "#FAF8F5" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px" }}>
+
+        <div
+          className="reveal"
+          style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "28px" }}
+        >
+          <div>
+            <span className="eyebrow">Par territoire</span>
+            <h2 className="sec-title">À la découverte des régions</h2>
+          </div>
+          <button
+            onClick={() => navigate("/events")}
+            style={{
+              fontSize: "13px", fontWeight: 600, color: "#FF6B1A",
+              background: "none", border: "none",
+              borderBottom: "1.5px solid #FF6B1A",
+              paddingBottom: "1px", cursor: "pointer",
+              whiteSpace: "nowrap", flexShrink: 0, minHeight: "auto",
+            }}
+          >
+            Toutes les régions →
+          </button>
+        </div>
+
+        <div
+          className="reveal regions-grid-responsive"
+          style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr 1fr 1fr", gap: "12px" }}
+        >
+          {/* Grande card */}
+          {featured && (
+            <button
+              onClick={() => navigate(`/events?region=${encodeURIComponent(featured.name)}`)}
+              style={{
+                borderRadius: "12px", overflow: "hidden",
+                position: "relative", height: "180px",
+                cursor: "pointer", border: "none", padding: 0,
+              }}
+              onMouseEnter={e => {
+                const bg = e.currentTarget.querySelector(".rcard-bg") as HTMLElement;
+                const tint = e.currentTarget.querySelector(".rcard-tint") as HTMLElement;
+                if (bg) { bg.style.transform = "scale(1.05)"; bg.style.filter = "brightness(0.88) saturate(1.2)"; }
+                if (tint) tint.style.opacity = "1";
+              }}
+              onMouseLeave={e => {
+                const bg = e.currentTarget.querySelector(".rcard-bg") as HTMLElement;
+                const tint = e.currentTarget.querySelector(".rcard-tint") as HTMLElement;
+                if (bg) { bg.style.transform = "none"; bg.style.filter = "brightness(0.7) saturate(1.1)"; }
+                if (tint) tint.style.opacity = "0";
+              }}
+            >
+              <div
+                className="rcard-bg"
+                style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: `url('${featured.image}')`,
+                  backgroundSize: "cover", backgroundPosition: "center",
+                  filter: "brightness(0.7) saturate(1.1)",
+                  transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1), filter 0.3s",
+                }}
+              />
+              <div
+                className="rcard-tint"
+                style={{
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(135deg, rgba(255,107,26,0.18) 0%, transparent 60%)",
+                  opacity: 0, transition: "opacity 0.3s",
+                }}
+              />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 58%)" }} />
+              <div style={{ position: "absolute", bottom: "16px", left: "18px" }}>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "20px", color: "white", lineHeight: 1.25, letterSpacing: "-0.02em" }}>
+                  {featured.name}
+                </div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.68)", fontWeight: 500, marginTop: "3px" }}>
+                  {featured.count} événement{featured.count > 1 ? "s" : ""}
+                </div>
+              </div>
+            </button>
+          )}
+
+          {/* Petites cards */}
+          {rest.map((region, idx) => (
             <button
               key={region.name}
               onClick={() => navigate(`/events?region=${encodeURIComponent(region.name)}`)}
+              className="reveal"
               style={{
-                position: "relative",
-                width: "140px",
-                height: "88px",
-                borderRadius: "12px",
-                overflow: "hidden",
-                flexShrink: 0,
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
+                borderRadius: "12px", overflow: "hidden",
+                position: "relative", height: "180px",
+                cursor: "pointer", border: "none", padding: 0,
+              }}
+              onMouseEnter={e => {
+                const bg = e.currentTarget.querySelector(".rcard-bg") as HTMLElement;
+                const tint = e.currentTarget.querySelector(".rcard-tint") as HTMLElement;
+                if (bg) { bg.style.transform = "scale(1.05)"; bg.style.filter = "brightness(0.88) saturate(1.2)"; }
+                if (tint) tint.style.opacity = "1";
+              }}
+              onMouseLeave={e => {
+                const bg = e.currentTarget.querySelector(".rcard-bg") as HTMLElement;
+                const tint = e.currentTarget.querySelector(".rcard-tint") as HTMLElement;
+                if (bg) { bg.style.transform = "none"; bg.style.filter = "brightness(0.7) saturate(1.1)"; }
+                if (tint) tint.style.opacity = "0";
               }}
             >
-              <img
-                src={region.image}
-                alt={region.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              <div
+                className="rcard-bg"
+                style={{
+                  position: "absolute", inset: 0,
+                  backgroundImage: `url('${region.image}')`,
+                  backgroundSize: "cover", backgroundPosition: "center",
+                  filter: "brightness(0.7) saturate(1.1)",
+                  transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1), filter 0.3s",
+                }}
               />
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(to top, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.1) 100%)",
-              }} />
-              <div style={{
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                padding: "10px 12px",
-              }}>
-                <p style={{
-                  color: "white",
-                  fontSize: "11px",
-                  fontWeight: 700,
-                  lineHeight: 1.2,
-                  marginBottom: "2px",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                }}>
+              <div
+                className="rcard-tint"
+                style={{
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(135deg, rgba(255,107,26,0.18) 0%, transparent 60%)",
+                  opacity: 0, transition: "opacity 0.3s",
+                }}
+              />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 58%)" }} />
+              <div style={{ position: "absolute", bottom: "16px", left: "18px" }}>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "15px", color: "white", lineHeight: 1.25, letterSpacing: "-0.02em" }}>
                   {region.name}
-                </p>
-                <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px" }}>
+                </div>
+                <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.68)", fontWeight: 500, marginTop: "3px" }}>
                   {region.count} événement{region.count > 1 ? "s" : ""}
-                </p>
+                </div>
               </div>
             </button>
           ))}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .regions-grid-responsive { grid-template-columns: 1fr 1fr !important; }
+          .regions-grid-responsive button { height: 130px !important; }
+        }
+        @media (max-width: 480px) {
+          .regions-grid-responsive { grid-template-columns: 1fr !important; }
+          .regions-grid-responsive button { height: 120px !important; }
+        }
+      `}</style>
     </section>
   );
 };
