@@ -60,7 +60,6 @@ const Events = () => {
         .eq("status", "published")
         .gte("starts_at", new Date().toISOString());
 
-      if (activeSport) query = query.eq("sports.slug", activeSport);
       if (activeRegion) query = query.eq("region", activeRegion);
       if (search) query = query.ilike("title", `%${search}%`);
 
@@ -73,6 +72,8 @@ const Events = () => {
       const { data, count } = await query;
       let result = data || [];
 
+      if (activeSport) result = result.filter((e: any) => e.sports?.slug === activeSport);
+
       // Tri prix côté client
       if (activeSort === "price_asc") {
         result = result.sort((a: any, b: any) => {
@@ -83,7 +84,7 @@ const Events = () => {
       }
 
       setEvents(result);
-      setTotal(count || 0);
+      setTotal(activeSport ? result.length : count || 0);
 
       // Extraire régions uniques
       const r = [...new Set((data || []).map((e: any) => e.region).filter(Boolean))].sort();

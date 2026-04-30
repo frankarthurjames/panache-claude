@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 import { useReveal } from "@/hooks/useReveal";
+import { optimizeImage } from "@/lib/utils";
 
 const FALLBACK = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=80";
 
@@ -45,7 +46,7 @@ export const FeaturedEvents = () => {
 
   if (events.length === 0) return null;
 
-  const getImage   = (e: any) => e.images?.length > 0 ? e.images[0] : FALLBACK;
+  const getImage   = (e: any) => optimizeImage(e.images?.length > 0 ? e.images[0] : FALLBACK, 800);
   const getSport   = (e: any) => (e.sports?.name || "Sport").toUpperCase();
   const getDate    = (e: any) => format(new Date(e.starts_at), "d MMM yyyy", { locale: fr });
   const cleanTitle = (t: string) => t.replace(/^\[.*?\]\s*/, "");

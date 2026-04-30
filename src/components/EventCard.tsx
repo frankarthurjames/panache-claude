@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { optimizeImage } from "@/lib/utils";
 
 const FALLBACK = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=80";
 
@@ -85,7 +86,7 @@ export const EventCard = ({
       }}>
         <img
           className="ec-img"
-          src={image || FALLBACK}
+          src={optimizeImage(image || FALLBACK, 600)}
           alt={cleanTitle}
           style={{
             width: "100%",

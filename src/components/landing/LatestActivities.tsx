@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Loader2 } from "lucide-react";
 import { useReveal } from "@/hooks/useReveal";
+import { optimizeImage } from "@/lib/utils";
 
 const FALLBACK = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=80";
 
@@ -75,7 +76,7 @@ export const LatestActivities = () => {
           className="ev-grid-responsive"
         >
           {activities.map((activity: any, idx) => {
-            const imageUrl = activity.images?.length > 0 ? activity.images[0] : FALLBACK;
+            const imageUrl = optimizeImage(activity.images?.length > 0 ? activity.images[0] : FALLBACK, 600);
             const minPrice = activity.ticket_types?.length > 0
               ? Math.min(...activity.ticket_types.map((t: any) => t.price_cents))
               : 0;
