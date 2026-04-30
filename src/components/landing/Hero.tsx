@@ -75,7 +75,7 @@ export const Hero = ({ stats, loading }: HeroProps) => {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 mt-16">
         <h1 className="text-4xl md:text-6xl font-bold text-white mb-10">
-          Votre prochain événement<br />sportif commence ici
+          Les événements sportifs<br />près de chez vous.
         </h1>
 
         <div className="max-w-3xl mx-auto">
