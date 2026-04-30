@@ -52,7 +52,7 @@ export const Navbar = () => {
           textDecoration: "none", flexShrink: 0,
         }}>
           <img
-            src="/panachP.png"
+            src="/panache-logo-text.png"
             alt="Panache"
             style={{ height: "32px", width: "auto", display: "block" }}
           />
