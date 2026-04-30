@@ -46,7 +46,7 @@ export const FeaturedEvents = () => {
 
   if (events.length === 0) return null;
 
-  const getImage   = (e: any) => optimizeImage(e.images?.length > 0 ? e.images[0] : FALLBACK, 800);
+  const getImage   = (e: any) => optimizeImage(e.images?.[0]);
   const getSport   = (e: any) => (e.sports?.name || "Sport").toUpperCase();
   const getDate    = (e: any) => format(new Date(e.starts_at), "d MMM yyyy", { locale: fr });
   const cleanTitle = (t: string) => t.replace(/^\[.*?\]\s*/, "");

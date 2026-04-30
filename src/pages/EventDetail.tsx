@@ -53,37 +53,22 @@ const EventDetail = () => {
         if (error) throw error;
         setEvent(data);
 
-        const [orgResult, nearbyResult] = await Promise.all([
+        const [countResult, nearbyResult] = await Promise.all([
           data?.organization_id
             ? supabase.from('events').select('id', { count: 'exact' }).eq('organization_id', data.organization_id).eq('status', 'published')
-            : Promise.resolve({ count: 0, data: null, error: null }),
-          supabase
-            .from('events')
+            : Promise.resolve({ count: 0 }),
+          supabase.from('events')
             .select('id, title, city, starts_at, images, ticket_types(*), sports(name)')
             .eq('status', 'published')
             .neq('id', id)
             .gte('starts_at', new Date().toISOString())
+            .eq('city', data.city || '')
             .order('starts_at', { ascending: true })
-            .limit(3)
-            .eq('city', data.city || ''),
+            .limit(3),
         ]);
 
-        setOrgEventsCount((orgResult as any).count ?? 0);
-
-        const nearby = (nearbyResult as any).data;
-        if (nearby && nearby.length > 0) {
-          setNearbyEvents(nearby);
-        } else {
-          const { data: fallback } = await supabase
-            .from('events')
-            .select('id, title, city, starts_at, images, ticket_types(*), sports(name)')
-            .eq('status', 'published')
-            .neq('id', id)
-            .gte('starts_at', new Date().toISOString())
-            .order('starts_at', { ascending: true })
-            .limit(3);
-          setNearbyEvents(fallback || []);
-        }
+        setOrgEventsCount((countResult as any).count ?? 0);
+        setNearbyEvents((nearbyResult as any).data || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -124,12 +109,7 @@ const EventDetail = () => {
   const cleanTitle = event.title?.replace(/^\[.*?\]\s*/, '') || '';
   const sport = event.sport?.name || event.sports?.name || null;
 
-  const heroImage = optimizeImage(
-    event.images?.length > 0
-      ? event.images[0]
-      : "https://images.unsplash.com/photo-1461896836934-ffe607ba8211",
-    1200
-  );
+  const heroImage = optimizeImage(event.images?.[0]);
 
   const totalRemaining = event.ticket_types?.reduce((acc: number, t: any) => {
     const sold = (event.registrations || []).filter((r: any) => r.ticket_type_id === t.id).length;

@@ -86,7 +86,7 @@ export const EventCard = ({
       }}>
         <img
           className="ec-img"
-          src={optimizeImage(image || FALLBACK, 600)}
+          src={optimizeImage(image)}
           alt={cleanTitle}
           style={{
             width: "100%",

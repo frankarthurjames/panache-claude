@@ -76,7 +76,7 @@ export const LatestActivities = () => {
           className="ev-grid-responsive"
         >
           {activities.map((activity: any, idx) => {
-            const imageUrl = optimizeImage(activity.images?.length > 0 ? activity.images[0] : FALLBACK, 600);
+            const imageUrl = optimizeImage(activity.images?.[0]);
             const minPrice = activity.ticket_types?.length > 0
               ? Math.min(...activity.ticket_types.map((t: any) => t.price_cents))
               : 0;

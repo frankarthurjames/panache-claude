@@ -72,7 +72,12 @@ const Events = () => {
       const { data, count } = await query;
       let result = data || [];
 
-      if (activeSport) result = result.filter((e: any) => e.sports?.slug === activeSport);
+      if (activeSport) {
+        result = result.filter((e: any) =>
+          e.sports?.slug === activeSport ||
+          e.sports?.name?.toLowerCase() === activeSport.toLowerCase()
+        );
+      }
 
       // Tri prix côté client
       if (activeSort === "price_asc") {
