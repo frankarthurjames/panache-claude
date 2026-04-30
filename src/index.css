@@ -278,3 +278,19 @@
     font-size: clamp(26px, 6vw, 36px) !important;
   }
 }
+
+/* ── Typographie globale ── */
+body, p, span, div, li, a, input, button, label {
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+.sec-title {
+  font-family: 'Poppins', system-ui, sans-serif !important;
+  font-weight: 700 !important;
+  font-style: italic !important;
+  font-size: clamp(32px, 3.8vw, 48px) !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+}

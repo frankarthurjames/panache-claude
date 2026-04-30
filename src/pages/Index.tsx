@@ -453,6 +453,54 @@ const Index = () => {
         <FeaturedEvents />
         <LatestActivities />
         <SportsSpotlight />
+
+        {/* Stats band */}
+        <div style={{
+          background: "#FF6B1A",
+          padding: "40px 0",
+        }}>
+          <div style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: "0 40px",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "0",
+          }}>
+            {[
+              { number: "1 000+", label: "Événements en France" },
+              { number: "40+",    label: "Clubs inscrits" },
+              { number: "0€",     label: "Pour publier votre événement" },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                textAlign: "center",
+                padding: "0 20px",
+                borderRight: i < 2 ? "1px solid rgba(255,255,255,0.3)" : "none",
+              }}>
+                <div style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 800,
+                  fontSize: "clamp(36px, 4vw, 56px)",
+                  color: "white",
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                  marginBottom: "8px",
+                }}>
+                  {stat.number}
+                </div>
+                <div style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "15px",
+                  fontWeight: 500,
+                  color: "rgba(255,255,255,0.85)",
+                }}>
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <RegionsGrid />
         <MonthlyCalendar />
         <CtaBand />

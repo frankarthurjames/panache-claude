@@ -157,15 +157,15 @@ export const EventCard = ({
 
         {/* Footer prix */}
         {priceDisplay && (
-          <div style={{ marginTop: "auto", paddingTop: "10px" }}>
+          <div>
             <span style={{
-              fontSize: "11px",
+              fontFamily: "'Poppins', sans-serif",
+              fontSize: "16px",
               fontWeight: 700,
-              color: priceDisplay.free ? "#166534" : "#9A3412",
-              background: priceDisplay.free ? "#DCFCE7" : "#FFF2EB",
-              padding: "4px 10px",
-              borderRadius: "50px",
-              display: "inline-block",
+              color: priceDisplay.free ? "#166534" : "#FF6B1A",
+              marginTop: "auto",
+              paddingTop: "10px",
+              display: "block",
             }}>
               {priceDisplay.label}
             </span>
