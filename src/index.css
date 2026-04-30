@@ -2,125 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   PANACHE — Design System
-   Source de vérité unique. Toutes les couleurs en HSL.
-   Ne jamais coder des couleurs en dur dans les composants.
-   ============================================================ */
-
 @layer base {
   :root {
-    /* --- Couleurs Panache --- */
+    --orange:        #FF6B1A;
+    --orange-dim:    #E85A0C;
+    --orange-pale:   #FFF2EB;
+    --noir:          #141414;
+    --noir-soft:     #1E1E1E;
+    --blanc:         #FFFFFF;
+    --creme:         #FAF8F5;
+    --stone:         #F2EFE9;
+    --gris:          #6B6B6B;
+    --gris-light:    #E8E5DF;
+    --ease-out:      cubic-bezier(0.22, 1, 0.36, 1);
 
-    /* Orange — couleur signature */
-    --primary:            25 95% 55%;   /* #F97316 */
-    --primary-hover:      25 95% 47%;   /* #EA6C0A */
-    --primary-light:      25 100% 97%;  /* #FFF7ED */
+    --background:    #FAF8F5;
+    --foreground:    #141414;
+    --primary:       25 90% 55%;
     --primary-foreground: 0 0% 100%;
-
-    /* Noirs & fonds */
-    --black:              0 0% 4%;      /* #0A0A0A — header, footer, hero dark */
-    --black-soft:         0 0% 8%;      /* #141414 — sections sombres secondaires */
-    --background:         30 11% 96%;   /* #F5F4F2 — fond de page beige chaud */
-    --surface:            0 0% 100%;    /* #FFFFFF — cartes sur fond beige */
-
-    /* Textes */
-    --foreground:         0 0% 10%;     /* #1A1A1A — texte principal */
-    --foreground-muted:   0 0% 35%;     /* #5A5A5A — texte secondaire, WCAG AA */
-
-    /* Bordures & inputs */
-    --border:             0 0% 91%;     /* #E8E8E8 */
-    --input:              0 0% 91%;
-    --ring:               25 95% 55%;
-
-    /* Statuts */
-    --success:            142 69% 36%;  /* #16A34A */
-    --success-foreground: 0 0% 100%;
-    --error:              0 84% 60%;    /* #EF4444 */
-    --error-foreground:   0 0% 100%;
-    --warning:            38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    /* Composants shadcn/ui — alignés sur les tokens Panache */
-    --card:               0 0% 100%;
-    --card-foreground:    0 0% 10%;
-    --popover:            0 0% 100%;
-    --popover-foreground: 0 0% 10%;
-    --secondary:          30 11% 93%;
+    --secondary:     30 11% 93%;
     --secondary-foreground: 0 0% 10%;
-    --muted:              30 11% 93%;
-    --muted-foreground:   0 0% 35%;
-    --accent:             25 95% 55%;
-    --accent-foreground:  0 0% 100%;
-    --destructive:        0 84% 60%;
+    --muted:         30 11% 93%;
+    --muted-foreground: 0 0% 42%;
+    --accent:        25 90% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive:   0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
-    /* Radius */
-    --radius: 0.625rem;
-
-    /* Sidebar */
+    --border:        0 0% 91%;
+    --input:         0 0% 91%;
+    --ring:          25 90% 55%;
+    --card:          0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover:       0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --radius:        0.625rem;
+    --success:       142 69% 36%;
+    --success-foreground: 0 0% 100%;
     --sidebar-background:         0 0% 98%;
     --sidebar-foreground:         0 0% 10%;
-    --sidebar-primary:            25 95% 55%;
+    --sidebar-primary:            25 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent:             30 11% 93%;
     --sidebar-accent-foreground:  0 0% 10%;
     --sidebar-border:             0 0% 91%;
-    --sidebar-ring:               25 95% 55%;
-
-    /* Ombres */
-    --shadow-card:   0 2px 12px -2px hsl(0 0% 0% / 0.08);
-    --shadow-orange: 0 4px 24px -4px hsl(25 95% 55% / 0.28);
-    --shadow-lg:     0 8px 40px -8px hsl(0 0% 0% / 0.12);
+    --sidebar-ring:               25 90% 55%;
   }
 
-  /* Mode sombre — conservé pour compatibilité future */
   .dark {
-    --primary:            25 95% 55%;
-    --primary-foreground: 0 0% 100%;
-    --background:         0 0% 6%;
-    --surface:            0 0% 10%;
-    --foreground:         0 0% 96%;
-    --foreground-muted:   0 0% 60%;
-    --border:             0 0% 18%;
-    --input:              0 0% 18%;
-    --card:               0 0% 10%;
-    --card-foreground:    0 0% 96%;
-    --popover:            0 0% 10%;
-    --popover-foreground: 0 0% 96%;
-    --secondary:          0 0% 14%;
-    --secondary-foreground: 0 0% 96%;
-    --muted:              0 0% 14%;
-    --muted-foreground:   0 0% 60%;
-    --accent:             25 95% 55%;
-    --accent-foreground:  0 0% 100%;
-    --destructive:        0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --sidebar-background:         0 0% 8%;
-    --sidebar-foreground:         0 0% 96%;
-    --sidebar-primary:            25 95% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent:             0 0% 14%;
-    --sidebar-accent-foreground:  0 0% 96%;
-    --sidebar-border:             0 0% 18%;
-    --sidebar-ring:               25 95% 55%;
+    --background:    #141414;
+    --foreground:    #F5F4F2;
+    --card:          #1E1E1E;
+    --card-foreground: #F5F4F2;
+    --border:        0 0% 18%;
+    --input:         0 0% 18%;
+    --muted:         0 0% 14%;
+    --muted-foreground: 0 0% 60%;
   }
-}
 
-/* ============================================================
-   RÈGLES GLOBALES — Non négociables
-   ============================================================ */
-
-@layer base {
   * {
     @apply border-border;
     box-sizing: border-box;
   }
 
   html {
+    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -128,114 +75,127 @@
     font-family: 'DM Sans', system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.6;
-    font-feature-settings: 'kern' 1, 'liga' 1;
+    overflow-x: hidden;
   }
 
-  /* Titres — Poppins avec tracking serré */
-  h1, h2, h3 {
+  h1, h2, h3, h4, h5, h6 {
     font-family: 'Poppins', system-ui, sans-serif;
-    letter-spacing: -0.02em;
-    line-height: 1.08;
-    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
   }
 
-  h4, h5, h6 {
-    font-family: 'DM Sans', system-ui, sans-serif;
-    font-weight: 600;
-    line-height: 1.4;
-  }
-
-  /* Échelle typographique responsive */
-  h1 { font-size: clamp(2rem, 5vw, 4.5rem); }
-  h2 { font-size: clamp(1.5rem, 3.5vw, 2.625rem); }
-  h3 { font-size: clamp(1.125rem, 2vw, 1.375rem); font-weight: 700; }
-
-  /* Boutons — hauteur minimum garantie */
   button, [role="button"] {
     min-height: 44px;
     font-family: 'DM Sans', system-ui, sans-serif;
     font-weight: 600;
+    cursor: pointer;
   }
 
-  img {
-    max-width: 100%;
-    height: auto;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
+  img { max-width: 100%; height: auto; }
+  a { color: inherit; text-decoration: none; }
 }
-
-/* ============================================================
-   UTILITAIRES PANACHE
-   ============================================================ */
 
 @layer utilities {
   /* Polices */
   .font-poppins { font-family: 'Poppins', system-ui, sans-serif; }
   .font-dm      { font-family: 'DM Sans', system-ui, sans-serif; }
 
-  /* Titre hero avec tracking serré */
-  .title-hero {
+  /* Titres de sections — Poppins 700 italic */
+  .sec-title {
     font-family: 'Poppins', system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.0;
-  }
-
-  /* Badge standard */
-  .badge-sport {
-    font-family: 'DM Sans', system-ui, sans-serif;
-    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-style: italic;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
   }
 
-  /* Overlay sombre pour texte lisible sur image */
-  .image-overlay {
+  /* Eyebrow labels */
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #FF6B1A;
+  }
+
+  /* Overlays image */
+  .overlay-hero {
     background: linear-gradient(
-      to top,
-      hsl(0 0% 0% / 0.72) 0%,
-      hsl(0 0% 0% / 0.20) 50%,
-      hsl(0 0% 0% / 0.00) 100%
+      to bottom,
+      rgba(10,10,10,0.30) 0%,
+      rgba(10,10,10,0.45) 35%,
+      rgba(10,10,10,0.72) 65%,
+      rgba(10,10,10,0.82) 100%
     );
   }
 
-  /* Overlay hero pleine page */
-  .image-overlay-hero {
+  .overlay-card {
     background: linear-gradient(
-      135deg,
-      hsl(0 0% 4% / 0.85) 0%,
-      hsl(25 95% 20% / 0.40) 100%
+      to top,
+      rgba(10,10,10,0.75) 0%,
+      rgba(10,10,10,0.20) 55%,
+      transparent 100%
+    );
+  }
+
+  .overlay-featured {
+    background: linear-gradient(
+      to top,
+      rgba(0,0,0,0.45) 0%,
+      transparent 60%
     );
   }
 
   /* Scrollbar cachée */
   .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* Truncate 2 lignes */
+  /* Truncate propre */
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    word-break: break-word;
     hyphens: none;
+    word-break: break-word;
   }
 
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    word-break: break-word;
-    hyphens: none;
+  /* Badge sport */
+  .sport-chip {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
   }
+
+  /* Transitions rapides — esprit sportif */
+  .transition-sport {
+    transition: transform 0.15s cubic-bezier(0.22,1,0.36,1),
+                box-shadow 0.15s cubic-bezier(0.22,1,0.36,1),
+                border-color 0.15s;
+  }
+
+  /* Hover card standard */
+  .card-hover:hover {
+    transform: translateY(-5px);
+  }
+}
+
+/* Hero zoom animation */
+@keyframes heroZoom {
+  from { transform: scale(1); }
+  to   { transform: scale(1.06); }
+}
+
+.animate-hero-zoom {
+  animation: heroZoom 18s ease-in-out infinite alternate;
+}
+
+/* Reveal au scroll */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
 }
