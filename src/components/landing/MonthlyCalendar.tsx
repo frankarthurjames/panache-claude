@@ -29,7 +29,10 @@ export const MonthlyCalendar = () => {
           countsByKey[key] = (countsByKey[key] || 0) + 1;
           if (!labelsByKey[key]) {
             labelsByKey[key] = capitalize(
-              new Date(`${key}-01`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+              new Date(`${key}-01`).toLocaleDateString("fr-FR", {
+                month: "long",
+                year: "numeric",
+              })
             );
           }
         }
@@ -49,51 +52,83 @@ export const MonthlyCalendar = () => {
   }, []);
 
   if (loading) return (
-    <section className="py-14 px-4 sm:px-6 lg:px-8">
-      <div className="container mx-auto flex justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+    <section style={{ padding: "80px 0", background: "#F2EFE9" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px", display: "flex", justifyContent: "center" }}>
+        <Loader2 style={{ width: 32, height: 32, color: "#FF6B1A" }} className="animate-spin" />
       </div>
     </section>
   );
 
   if (months.length === 0) return null;
 
-  const maxCount = Math.max(...months.map((m) => m.count));
-
   return (
-    <section className="py-14 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        <h2
-          className="font-poppins font-extrabold text-[#1A1A1A] tracking-[-0.02em] mb-8"
-          style={{ fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)" }}
+    <section style={{ padding: "80px 0", background: "#F2EFE9" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px" }}>
+
+        <div className="reveal" style={{ marginBottom: "28px" }}>
+          <span className="eyebrow">Planifiez</span>
+          <h2 className="sec-title">Calendrier des événements</h2>
+        </div>
+
+        <div
+          className="cal-grid-responsive"
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}
         >
-          Calendrier des événements
-        </h2>
-        <div className="bg-white rounded-2xl border border-[#E8E8E8] overflow-hidden">
           {months.map(({ month, count, slug }, idx) => (
             <button
               key={slug}
+              className="reveal"
               onClick={() => navigate(`/events?month=${slug}`)}
-              className={`w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#FFF7ED] transition-colors group ${
-                idx < months.length - 1 ? "border-b border-[#E8E8E8]" : ""
-              }`}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: "white",
+                border: "1.5px solid #E8E5DF",
+                borderRadius: "12px",
+                padding: "16px 22px",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "border-color 0.15s, background 0.15s, transform 0.15s",
+                minHeight: "auto",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = "#FF6B1A";
+                e.currentTarget.style.background = "#FFF2EB";
+                e.currentTarget.style.transform = "translateX(4px)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "#E8E5DF";
+                e.currentTarget.style.background = "white";
+                e.currentTarget.style.transform = "none";
+              }}
             >
-              <span className="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#F97316] transition-colors w-36 shrink-0 capitalize">
+              <span style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "15px", fontWeight: 600,
+                color: "#141414", letterSpacing: "-0.01em",
+                textTransform: "capitalize",
+              }}>
                 {month}
               </span>
-              <div className="flex-1 h-1 bg-[#F5F4F2] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#F97316] rounded-full opacity-50"
-                  style={{ width: `${(count / maxCount) * 100}%` }}
-                />
-              </div>
-              <span className="font-poppins font-bold text-sm text-[#F97316] w-8 text-right shrink-0">
-                {count}
+              <span style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "15px", fontWeight: 700,
+                fontStyle: "italic", color: "#FF6B1A",
+                whiteSpace: "nowrap",
+              }}>
+                {count} événement{count > 1 ? "s" : ""}
               </span>
             </button>
           ))}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .cal-grid-responsive { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </section>
   );
 };
