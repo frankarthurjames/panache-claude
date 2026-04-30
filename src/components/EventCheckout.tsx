@@ -39,26 +39,24 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
       try {
         const { data: eventData, error } = await supabase
           .from('events')
-          .select('organization_id, organizations(stripe_account_id)')
+          .select('organization_id')
           .eq('id', eventId)
           .single();
 
-        if (error || !eventData) {
+        if (error || !eventData?.organization_id) {
           setIsStripeStatusLoading(false);
           return;
         }
 
-        if (eventData.organizations?.stripe_account_id) {
-          const { data: statusData, error: statusError } = await supabase.functions.invoke('check-connect-status', {
-            body: { organizationId: eventData.organization_id }
-          });
+        const { data: statusData, error: statusError } = await supabase.functions.invoke('check-connect-status', {
+          body: { organizationId: eventData.organization_id }
+        });
 
-          if (!statusError && statusData) {
-            setStripeStatus({
-              connected: statusData.connected,
-              charges_enabled: statusData.charges_enabled
-            });
-          }
+        if (!statusError && statusData && !statusData.error) {
+          setStripeStatus({
+            connected: statusData.connected ?? false,
+            charges_enabled: statusData.charges_enabled ?? false
+          });
         }
       } catch (error) {
         console.error('Error checking Stripe status:', error);
@@ -102,8 +100,7 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
       return;
     }
 
-    const totalTickets = getTotalTickets();
-    if (totalTickets === 0) {
+    if (getTotalTickets() === 0) {
       toast.error("Veuillez sélectionner au moins un billet");
       return;
     }
@@ -128,9 +125,7 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
         });
 
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("Session expirée, veuillez vous reconnecter");
-      }
+      if (!session) throw new Error("Session expirée, veuillez vous reconnecter");
 
       const { data: result, error: invokeError } = await supabase.functions.invoke('create-payment-session', {
         body: {
@@ -144,16 +139,13 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
       });
 
       if (invokeError) {
-        const errorMessage = invokeError.message || invokeError.error || 'Erreur lors de la création de la session de paiement';
-        throw new Error(errorMessage);
+        throw new Error(invokeError.message || invokeError.error || 'Erreur lors de la création de la session de paiement');
       }
 
-      const data = result;
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else if (data?.success && data?.orderId) {
-        window.location.href = `${window.location.origin}/payment-success?order_id=${data.orderId}`;
+      if (result?.url) {
+        window.location.href = result.url;
+      } else if (result?.success && result?.orderId) {
+        window.location.href = `${window.location.origin}/payment-success?order_id=${result.orderId}`;
       }
     } catch (error) {
       console.error('Error creating payment session:', error);
@@ -164,8 +156,7 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
   };
 
   const hasOnlyFreeTickets = ticketTypes.every(t => t.price_cents === 0);
-  const totalPrice = getTotalPrice();
-  const isPaidOrder = totalPrice > 0;
+  const isPaidOrder = getTotalPrice() > 0;
   const isCheckoutDisabled = getTotalTickets() === 0 || isLoading || (isPaidOrder && !stripeStatus.charges_enabled);
 
   if (isStripeStatusLoading && !hasOnlyFreeTickets) {
@@ -223,18 +214,17 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
             return (
               <div
                 key={ticketType.id}
-                className={`p-4 rounded-2xl border-2 transition-all ${selectedQty > 0
-                  ? 'border-orange-500 bg-orange-50/30'
-                  : 'border-gray-100 bg-gray-50/50 hover:border-gray-200'
-                  }`}
+                className={`p-4 rounded-2xl border-2 transition-all ${
+                  selectedQty > 0
+                    ? 'border-orange-500 bg-orange-50/30'
+                    : 'border-gray-100 bg-gray-50/50 hover:border-gray-200'
+                }`}
               >
                 <div className="flex justify-between items-center">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-bold text-gray-900">{ticketType.name}</span>
-                      {isSoldOut && (
-                        <Badge variant="destructive" className="bg-red-500">Épuisé</Badge>
-                      )}
+                      {isSoldOut && <Badge variant="destructive" className="bg-red-500">Épuisé</Badge>}
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-lg font-extrabold text-orange-600">
@@ -275,7 +265,7 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
           })}
         </div>
 
-        {!stripeStatus.connected && (
+        {!stripeStatus.connected && !hasOnlyFreeTickets && (
           <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 items-start">
             <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
             <div>
@@ -313,21 +303,16 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
           <Button
             onClick={handleCheckout}
             disabled={isCheckoutDisabled}
-            className={`w-full h-16 rounded-2xl text-lg font-black transition-all shadow-xl hover:shadow-2xl active:scale-[0.98] ${isCheckoutDisabled
-              ? 'bg-gray-100 text-gray-400'
-              : 'bg-orange-600 hover:bg-orange-500 text-white'
-              }`}
+            className={`w-full h-16 rounded-2xl text-lg font-black transition-all shadow-xl hover:shadow-2xl active:scale-[0.98] ${
+              isCheckoutDisabled ? 'bg-gray-100 text-gray-400' : 'bg-orange-600 hover:bg-orange-500 text-white'
+            }`}
           >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-            ) : (
-              <CreditCard className="mr-3 h-6 w-6" />
-            )}
+            {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <CreditCard className="mr-3 h-6 w-6" />}
             {isLoading ? "Traitement..." :
               getTotalTickets() === 0 ? "Sélectionner des billets" :
-                getTotalPrice() === 0 ? "Confirmer la réservation →" :
-                  !stripeStatus.charges_enabled ? "Paiements non disponibles" :
-                    "Confirmer la commande →"}
+              getTotalPrice() === 0 ? "Confirmer la réservation →" :
+              !stripeStatus.charges_enabled ? "Paiements non disponibles" :
+              "Confirmer la commande →"}
           </Button>
 
           <div className="mt-4 flex items-center justify-center gap-2 opacity-50 grayscale hover:grayscale-0 transition-all cursor-default">
