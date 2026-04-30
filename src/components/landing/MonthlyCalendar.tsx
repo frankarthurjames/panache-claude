@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
@@ -7,6 +8,7 @@ const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export const MonthlyCalendar = () => {
   const [months, setMonths] = useState<{ month: string; count: number; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMonths = async () => {
@@ -33,7 +35,7 @@ export const MonthlyCalendar = () => {
         }
 
         const result = Object.entries(countsByKey)
-          .slice(0, 12)
+          .slice(0, 8)
           .map(([slug, count]) => ({ month: labelsByKey[slug], count, slug }));
 
         setMonths(result);
@@ -43,15 +45,14 @@ export const MonthlyCalendar = () => {
         setLoading(false);
       }
     };
-
     fetchMonths();
   }, []);
 
   if (loading) {
     return (
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
+      <section className="py-14 px-4 sm:px-6 lg:px-8">
         <div className="container mx-auto flex justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
         </div>
       </section>
     );
@@ -59,24 +60,36 @@ export const MonthlyCalendar = () => {
 
   if (months.length === 0) return null;
 
+  const maxCount = Math.max(...months.map(m => m.count));
+
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8">
+    <section className="py-14 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        <h2 className="text-3xl font-bold mb-8 text-gray-900">Calendrier des événements</h2>
-        <div className="space-y-0">
-          {months.map(({ month, count, slug }) => (
-            <a
+        <h2 className="font-poppins font-extrabold text-[#1A1A1A] tracking-[-0.02em] mb-8"
+            style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)' }}>
+          Calendrier des événements
+        </h2>
+
+        <div className="bg-white rounded-2xl border border-[#E8E8E8] overflow-hidden">
+          {months.map(({ month, count, slug }, idx) => (
+            <button
               key={slug}
-              href={`/events?month=${slug}`}
-              className="flex items-center justify-between py-4 border-b border-gray-100 hover:bg-gray-50 px-2 -mx-2 rounded-lg transition-colors group"
+              onClick={() => navigate(`/events?month=${slug}`)}
+              className={`w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#FFF7ED] transition-colors group ${idx < months.length - 1 ? 'border-b border-[#E8E8E8]' : ''}`}
             >
-              <span className="text-base font-semibold text-gray-900 capitalize group-hover:text-orange-500 transition-colors">
+              <span className="text-sm font-semibold text-[#1A1A1A] group-hover:text-[#F97316] transition-colors w-36 shrink-0 capitalize">
                 {month}
               </span>
-              <span className="text-base font-bold text-orange-500">
-                {count} événement{count > 1 ? 's' : ''}
+              <div className="flex-1 h-1 bg-[#F5F4F2] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#F97316] rounded-full opacity-50"
+                  style={{ width: `${(count / maxCount) * 100}%` }}
+                />
+              </div>
+              <span className="font-poppins font-bold text-sm text-[#F97316] w-8 text-right shrink-0">
+                {count}
               </span>
-            </a>
+            </button>
           ))}
         </div>
       </div>
