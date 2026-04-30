@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* ── Tokens Panache v6 ── */
     --orange:        #FF6B1A;
     --orange-dim:    #E85A0C;
     --orange-pale:   #FFF2EB;
@@ -16,47 +17,52 @@
     --gris-light:    #E8E5DF;
     --ease-out:      cubic-bezier(0.22, 1, 0.36, 1);
 
-    --background:    #FAF8F5;
-    --foreground:    #141414;
-    --primary:       25 90% 55%;
-    --primary-foreground: 0 0% 100%;
-    --secondary:     30 11% 93%;
-    --secondary-foreground: 0 0% 10%;
-    --muted:         30 11% 93%;
-    --muted-foreground: 0 0% 42%;
-    --accent:        25 90% 55%;
-    --accent-foreground: 0 0% 100%;
-    --destructive:   0 84% 60%;
+    /* ── shadcn/ui ── */
+    --background:             30 11% 97%;
+    --foreground:             0 0% 8%;
+    --card:                   0 0% 100%;
+    --card-foreground:        0 0% 8%;
+    --popover:                0 0% 100%;
+    --popover-foreground:     0 0% 8%;
+    --primary:                25 100% 55%;
+    --primary-foreground:     0 0% 100%;
+    --secondary:              30 11% 93%;
+    --secondary-foreground:   0 0% 8%;
+    --muted:                  30 11% 93%;
+    --muted-foreground:       0 0% 42%;
+    --accent:                 25 100% 55%;
+    --accent-foreground:      0 0% 100%;
+    --destructive:            0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border:        0 0% 91%;
-    --input:         0 0% 91%;
-    --ring:          25 90% 55%;
-    --card:          0 0% 100%;
-    --card-foreground: 0 0% 10%;
-    --popover:       0 0% 100%;
-    --popover-foreground: 0 0% 10%;
-    --radius:        0.625rem;
-    --success:       142 69% 36%;
-    --success-foreground: 0 0% 100%;
+    --border:                 0 0% 91%;
+    --input:                  0 0% 91%;
+    --ring:                   25 100% 55%;
+    --radius:                 0.625rem;
+    --success:                142 69% 36%;
+    --success-foreground:     0 0% 100%;
     --sidebar-background:         0 0% 98%;
-    --sidebar-foreground:         0 0% 10%;
-    --sidebar-primary:            25 90% 55%;
+    --sidebar-foreground:         0 0% 8%;
+    --sidebar-primary:            25 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent:             30 11% 93%;
-    --sidebar-accent-foreground:  0 0% 10%;
+    --sidebar-accent-foreground:  0 0% 8%;
     --sidebar-border:             0 0% 91%;
-    --sidebar-ring:               25 90% 55%;
+    --sidebar-ring:               25 100% 55%;
   }
 
   .dark {
-    --background:    #141414;
-    --foreground:    #F5F4F2;
-    --card:          #1E1E1E;
-    --card-foreground: #F5F4F2;
-    --border:        0 0% 18%;
-    --input:         0 0% 18%;
-    --muted:         0 0% 14%;
-    --muted-foreground: 0 0% 60%;
+    --background:         0 0% 8%;
+    --foreground:         30 11% 96%;
+    --card:               0 0% 11%;
+    --card-foreground:    30 11% 96%;
+    --border:             0 0% 18%;
+    --input:              0 0% 18%;
+    --muted:              0 0% 14%;
+    --muted-foreground:   0 0% 60%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 30 11% 96%;
+    --sidebar-accent:     0 0% 14%;
+    --sidebar-border:     0 0% 18%;
   }
 
   * {
@@ -68,6 +74,7 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -92,33 +99,47 @@
   }
 
   img { max-width: 100%; height: auto; }
-  a { color: inherit; text-decoration: none; }
+  a   { color: inherit; text-decoration: none; }
 }
 
 @layer utilities {
-  /* Polices */
-  .font-poppins { font-family: 'Poppins', system-ui, sans-serif; }
-  .font-dm      { font-family: 'DM Sans', system-ui, sans-serif; }
+  /* ── Polices ── */
+  .font-poppins { font-family: 'Poppins', system-ui, sans-serif !important; }
+  .font-dm      { font-family: 'DM Sans',  system-ui, sans-serif !important; }
 
-  /* Titres de sections — Poppins 700 italic */
+  /* ── Container 1200px uniforme ── */
+  .panache-wrap {
+    max-width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 40px !important;
+    padding-right: 40px !important;
+  }
+
+  /* ── Titres sections — Poppins 700 italic ── */
   .sec-title {
-    font-family: 'Poppins', system-ui, sans-serif;
-    font-weight: 700;
-    font-style: italic;
-    letter-spacing: -0.03em;
-    line-height: 1.12;
+    font-family:    'Poppins', system-ui, sans-serif !important;
+    font-weight:    700 !important;
+    font-style:     italic !important;
+    letter-spacing: -0.03em !important;
+    line-height:    1.1 !important;
+    font-size:      clamp(32px, 3.8vw, 52px) !important;
+    color:          #141414 !important;
   }
 
-  /* Eyebrow labels */
+  /* ── Eyebrow ── */
   .eyebrow {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    color: #FF6B1A;
+    font-family:    'DM Sans', system-ui, sans-serif !important;
+    font-size:      11px !important;
+    font-weight:    700 !important;
+    letter-spacing: 2.5px !important;
+    text-transform: uppercase !important;
+    color:          #FF6B1A !important;
+    display:        block !important;
+    margin-bottom:  10px !important;
   }
 
-  /* Overlays image */
+  /* ── Overlay hero ── */
   .overlay-hero {
     background: linear-gradient(
       to bottom,
@@ -126,76 +147,130 @@
       rgba(10,10,10,0.45) 35%,
       rgba(10,10,10,0.72) 65%,
       rgba(10,10,10,0.82) 100%
-    );
+    ) !important;
   }
 
+  /* ── Overlay card ── */
   .overlay-card {
     background: linear-gradient(
       to top,
       rgba(10,10,10,0.75) 0%,
       rgba(10,10,10,0.20) 55%,
       transparent 100%
-    );
+    ) !important;
   }
 
+  /* ── Overlay featured ── */
   .overlay-featured {
     background: linear-gradient(
       to top,
       rgba(0,0,0,0.45) 0%,
       transparent 60%
-    );
+    ) !important;
   }
 
-  /* Scrollbar cachée */
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-  /* Truncate propre */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    hyphens: none;
-    word-break: break-word;
-  }
-
-  /* Badge sport */
+  /* ── Sport chip ── */
   .sport-chip {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 100px;
-    white-space: nowrap;
+    font-size:       9px !important;
+    font-weight:     700 !important;
+    letter-spacing:  0.08em !important;
+    text-transform:  uppercase !important;
+    padding:         4px 10px !important;
+    border-radius:   100px !important;
+    white-space:     nowrap !important;
+    background:      rgba(255,255,255,0.94) !important;
+    backdrop-filter: blur(6px) !important;
+    color:           #141414 !important;
   }
 
-  /* Transitions rapides — esprit sportif */
+  /* ── Badges prix ── */
+  .badge-free {
+    font-size:     10px !important;
+    font-weight:   600 !important;
+    color:         #166534 !important;
+    background:    #DCFCE7 !important;
+    padding:       4px 10px !important;
+    border-radius: 100px !important;
+    white-space:   nowrap !important;
+    display:       inline-block !important;
+  }
+
+  .badge-price {
+    font-size:     10px !important;
+    font-weight:   700 !important;
+    color:         #9A3412 !important;
+    background:    #FFF2EB !important;
+    padding:       4px 10px !important;
+    border-radius: 100px !important;
+    white-space:   nowrap !important;
+    display:       inline-block !important;
+  }
+
+  /* ── Transitions sport ── */
   .transition-sport {
-    transition: transform 0.15s cubic-bezier(0.22,1,0.36,1),
-                box-shadow 0.15s cubic-bezier(0.22,1,0.36,1),
-                border-color 0.15s;
+    transition:
+      transform     0.15s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow    0.15s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color  0.15s ease,
+      background    0.15s ease !important;
   }
 
-  /* Hover card standard */
-  .card-hover:hover {
-    transform: translateY(-5px);
+  /* ── Scrollbar cachée ── */
+  .scrollbar-hide::-webkit-scrollbar { display: none !important; }
+  .scrollbar-hide {
+    -ms-overflow-style: none !important;
+    scrollbar-width:    none !important;
+  }
+
+  /* ── Line clamp ── */
+  .line-clamp-2 {
+    display:            -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow:           hidden !important;
+    hyphens:            none !important;
+  }
+
+  .line-clamp-3 {
+    display:            -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow:           hidden !important;
+    hyphens:            none !important;
   }
 }
 
-/* Hero zoom animation */
+/* ── Hero zoom ── */
 @keyframes heroZoom {
   from { transform: scale(1); }
   to   { transform: scale(1.06); }
 }
-
 .animate-hero-zoom {
   animation: heroZoom 18s ease-in-out infinite alternate;
 }
 
-/* Reveal au scroll */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: none; }
+/* ── Reveal scroll ── */
+.reveal {
+  opacity:   0;
+  transform: translateY(18px);
+  transition:
+    opacity   0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.in    { opacity: 1; transform: none; }
+.reveal-d1    { transition-delay: 0.06s; }
+.reveal-d2    { transition-delay: 0.12s; }
+.reveal-d3    { transition-delay: 0.18s; }
+.reveal-d4    { transition-delay: 0.24s; }
+
+/* ── Mobile global ── */
+@media (max-width: 768px) {
+  .panache-wrap {
+    padding-left:  20px !important;
+    padding-right: 20px !important;
+  }
+
+  .sec-title {
+    font-size: clamp(26px, 6vw, 36px) !important;
+  }
 }
