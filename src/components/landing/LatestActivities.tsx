@@ -37,7 +37,7 @@ export const LatestActivities = () => {
   }, []);
 
   if (loading) return (
-    <section style={{ padding: "80px 0", background: "#FAF8F5" }}>
+    <section style={{ padding: "56px 0", background: "#FAF8F5" }}>
       <div className="panache-wrap" style={{ display: "flex", justifyContent: "center" }}>
         <Loader2 style={{ width: 32, height: 32, color: "#FF6B1A" }} className="animate-spin" />
       </div>
@@ -47,7 +47,7 @@ export const LatestActivities = () => {
   if (activities.length === 0) return null;
 
   return (
-    <section style={{ padding: "80px 0", background: "#FAF8F5" }}>
+    <section style={{ padding: "56px 0", background: "#FAF8F5" }}>
       <div className="panache-wrap">
 
         <div
@@ -156,10 +156,9 @@ export const LatestActivities = () => {
                     paddingTop: "12px", borderTop: "1px solid #E8E5DF", marginTop: "auto",
                   }}>
                     <span style={{
-                      fontSize: "10px", fontWeight: isFree ? 600 : 700,
-                      color: isFree ? "#166534" : "#9A3412",
-                      background: isFree ? "#DCFCE7" : "#FFF2EB",
-                      padding: "4px 10px", borderRadius: "50px",
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: "15px", fontWeight: 700,
+                      color: isFree ? "#166534" : "#FF6B1A",
                     }}>
                       {priceDisplay}
                     </span>

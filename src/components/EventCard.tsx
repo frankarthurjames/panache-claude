@@ -57,6 +57,7 @@ export const EventCard = ({
         display: "flex",
         flexDirection: "column",
         width: "100%",
+        height: "100%",
         boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
         transition: "transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s",
       }}
@@ -157,14 +158,12 @@ export const EventCard = ({
 
         {/* Footer prix */}
         {priceDisplay && (
-          <div>
+          <div style={{ marginTop: "auto", paddingTop: "10px" }}>
             <span style={{
               fontFamily: "'Poppins', sans-serif",
-              fontSize: "16px",
+              fontSize: "15px",
               fontWeight: 700,
               color: priceDisplay.free ? "#166534" : "#FF6B1A",
-              marginTop: "auto",
-              paddingTop: "10px",
               display: "block",
             }}>
               {priceDisplay.label}

@@ -36,7 +36,7 @@ export const FeaturedEvents = () => {
   }, []);
 
   if (loading) return (
-    <section style={{ padding: "80px 0", background: "#FFFFFF" }}>
+    <section style={{ padding: "56px 0", background: "#FFFFFF" }}>
       <div className="panache-wrap" style={{ display: "flex", justifyContent: "center" }}>
         <Loader2 style={{ width: 32, height: 32, color: "#FF6B1A" }} className="animate-spin" />
       </div>
@@ -59,7 +59,7 @@ export const FeaturedEvents = () => {
   const [main, ...rest] = events;
 
   return (
-    <section style={{ padding: "80px 0", background: "#FFFFFF" }}>
+    <section style={{ padding: "56px 0", background: "#FFFFFF" }}>
       <div className="panache-wrap">
 
         {/* Header — titre avec accent orange */}
