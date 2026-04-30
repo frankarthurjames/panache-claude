@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { REGIONS } from "@/data/regions";
 import { Loader2 } from "lucide-react";
@@ -6,6 +7,7 @@ import { Loader2 } from "lucide-react";
 export const RegionsGrid = () => {
   const [regions, setRegions] = useState<{ name: string; image: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -57,10 +59,10 @@ export const RegionsGrid = () => {
       <div className="overflow-x-auto pb-4 scrollbar-hide">
         <div className="flex gap-4 px-4 sm:px-6 lg:px-8" style={{ width: 'max-content' }}>
           {regions.map((region) => (
-            <a
+            <button
               key={region.name}
-              href={`/events?region=${encodeURIComponent(region.name)}`}
-              className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
+              onClick={() => navigate(`/events?region=${encodeURIComponent(region.name)}`)}
+              className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0 text-left"
               style={{ width: '160px', height: '200px' }}
             >
               <img
@@ -75,7 +77,7 @@ export const RegionsGrid = () => {
                   {region.count} événement{region.count > 1 ? 's' : ''}
                 </p>
               </div>
-            </a>
+            </button>
           ))}
         </div>
       </div>
