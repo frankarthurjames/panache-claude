@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export const MonthlyCalendar = () => {
+  useReveal(200);
   const [months, setMonths] = useState<{ month: string; count: number; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();

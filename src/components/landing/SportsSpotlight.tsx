@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 const FALLBACK = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&q=80&w=800";
 
 export const SportsSpotlight = () => {
+  useReveal(200);
   const [sports, setSports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();

@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { REGIONS } from "@/data/regions";
 import { Loader2 } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 export const RegionsGrid = () => {
+  useReveal(200);
   const [regions, setRegions] = useState<{ name: string; image: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();

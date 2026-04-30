@@ -11,26 +11,9 @@ import { MonthlyCalendar } from "@/components/landing/MonthlyCalendar";
 import { supabase } from "@/integrations/supabase/client";
 import { REGIONS } from "@/data/regions";
 import { Search } from "lucide-react";
+import { useReveal } from "@/hooks/useReveal";
 
 const QUICK_SPORTS = ["Triathlon", "Trail", "Football", "Cyclisme", "Natation"];
-
-const useReveal = () => {
-  useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("in");
-            io.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.08 }
-    );
-    document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
-};
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -456,7 +439,7 @@ const CtaBand = () => {
 };
 
 const Index = () => {
-  useReveal();
+  useReveal(100);
 
   return (
     <div style={{ minHeight: "100vh", background: "#FAF8F5" }}>
