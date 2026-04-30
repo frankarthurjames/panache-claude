@@ -26,6 +26,7 @@ export const RegionsGrid = () => {
 
         const result = REGIONS
           .map((r) => ({ ...r, count: counts[r.name] || 0 }))
+          .filter((r) => r.count > 0)
           .sort((a, b) => b.count - a.count);
 
         setRegions(result);
@@ -54,7 +55,9 @@ export const RegionsGrid = () => {
   return (
     <section className="py-16">
       <div className="px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold mb-8 text-gray-900 max-w-7xl mx-auto">À la découverte des régions</h2>
+        <h2 className="text-3xl font-bold mb-8 text-gray-900 max-w-7xl mx-auto">
+          À la découverte des régions
+        </h2>
       </div>
       <div className="overflow-x-auto pb-4 scrollbar-hide">
         <div className="flex gap-4 px-4 sm:px-6 lg:px-8" style={{ width: 'max-content' }}>
