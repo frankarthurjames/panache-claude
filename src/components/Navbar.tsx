@@ -1,176 +1,349 @@
-
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useAdmin } from "@/hooks/useAdmin";
-import { User, LogOut, Menu, X } from "lucide-react";
-import { Logo } from "@/components/Logo";
-import { useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
 
-interface NavbarProps {
-  variant?: "transparent" | "orange";
-}
-
-const navLinks = [
-  { to: "/", label: "accueil", match: (p: string) => p === "/" },
-  { to: "/events", label: "événements", match: (p: string) => p.startsWith("/events") },
-  { to: "/clubs", label: "clubs", match: (p: string) => p.startsWith("/clubs") },
-  { to: "/calendar", label: "calendrier", match: (p: string) => p.startsWith("/calendar") },
-];
-
-export const Navbar = ({ variant = "transparent" }: NavbarProps) => {
-  const { user, signOut } = useAuth();
-  const { isAdmin } = useAdmin();
-  const navigate = useNavigate();
+export const Navbar = () => {
+  const { user } = useAuth();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    await supabase.auth.signOut();
   };
 
-  const isOrange = variant === "orange";
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
 
   return (
-    <nav className="absolute top-0 left-0 w-full z-50">
-      {isOrange && (
-        <div
-          className="absolute inset-0 bg-black h-[120px] -z-10"
-          style={{ clipPath: "polygon(0 0, 100% 0, 100% 85%, 0 100%)" }}
-        />
-      )}
+    <>
+      <nav
+        style={{
+          position: "fixed",
+          top: 0, left: 0, right: 0,
+          zIndex: 200,
+          height: "60px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 40px",
+          background: "rgba(255,255,255,0.96)",
+          backdropFilter: "blur(20px) saturate(1.8)",
+          borderBottom: scrolled
+            ? "1px solid rgba(0,0,0,0.10)"
+            : "1px solid rgba(0,0,0,0.07)",
+          transition: "border-color 0.15s ease",
+        }}
+      >
+        {/* Logo */}
+        <Link
+          to="/"
+          style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: "20px",
+            fontWeight: 800,
+            color: "#FF6B1A",
+            letterSpacing: "-0.5px",
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            gap: "7px",
+          }}
+        >
+          <span style={{
+            width: "7px", height: "7px",
+            background: "#FF6B1A",
+            borderRadius: "50%",
+            opacity: 0.7,
+            display: "inline-block",
+          }} />
+          Panache
+        </Link>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex justify-between items-center">
-          {/* Logo */}
-          <div className="text-white">
-            <Logo size="md" />
-          </div>
-
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
+        {/* Nav desktop */}
+        <ul
+          style={{ display: "flex", gap: "28px", listStyle: "none", margin: 0, padding: 0 }}
+          className="hidden md:flex"
+        >
+          {[
+            { label: "Événements", to: "/events" },
+            { label: "Clubs",      to: "/clubs" },
+            { label: "Calendrier", to: "/calendar" },
+          ].map(({ label, to }) => (
+            <li key={to}>
               <Link
-                key={link.to}
-                to={link.to}
-                className={`font-medium text-sm uppercase tracking-wide transition-colors ${link.match(location.pathname) ? 'text-white font-bold' : 'text-white/90 hover:text-white'}`}
+                to={to}
+                style={{
+                  fontSize: "13px",
+                  fontWeight: isActive(to) ? 600 : 500,
+                  color: isActive(to) ? "#FF6B1A" : "#6B6B6B",
+                  textDecoration: "none",
+                  transition: "color 0.15s",
+                }}
               >
-                {link.label}
+                {label}
               </Link>
-            ))}
+            </li>
+          ))}
+          <li>
             <Link
               to="/organisateurs"
-              className={`font-semibold text-sm transition-colors ${location.pathname === '/organisateurs' ? 'text-orange-400' : 'text-orange-400 hover:text-orange-300'}`}
+              style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#FF6B1A",
+                textDecoration: "none",
+              }}
             >
               Pour les organisateurs
             </Link>
-          </div>
+          </li>
+        </ul>
 
-          <div className="flex items-center space-x-2">
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center space-x-2 text-white rounded-full px-4 hover:opacity-90 transition-opacity"
-                    style={{
-                      background: isOrange ? "#FFFFFF" : "#F97316",
-                      color: isOrange ? "#000000" : "#FFFFFF"
-                    }}
-                  >
-                    <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">
-                      {user.user_metadata?.display_name || user.email}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard">Dashboard</Link>
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard/admin">Admin Panache</Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile">Profil</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Déconnexion
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button
-                asChild
-                className="hidden sm:inline-flex rounded-full px-6 font-semibold border-0"
+        {/* Actions desktop */}
+        <div
+          style={{ display: "flex", gap: "10px", alignItems: "center" }}
+          className="hidden md:flex"
+        >
+          {user ? (
+            <>
+              <Link
+                to="/dashboard"
                 style={{
-                  background: isOrange ? "#FFFFFF" : "#F97316",
-                  color: isOrange ? "#000000" : "#FFFFFF"
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "#141414",
+                  background: "none",
+                  border: "1.5px solid #E8E5DF",
+                  borderRadius: "50px",
+                  padding: "8px 18px",
+                  textDecoration: "none",
+                  transition: "border-color 0.15s, color 0.15s",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  minHeight: "36px",
                 }}
               >
-                <Link to="/auth?tab=signup">Vous êtes organisateur ?</Link>
-              </Button>
-            )}
-
-            {/* Mobile hamburger */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden text-white hover:bg-white/10"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden bg-black/95 backdrop-blur-sm border-t border-white/10">
-          <div className="container mx-auto px-4 py-4 flex flex-col space-y-1">
-            <Link
-              to="/organisateurs"
-              onClick={() => setMobileOpen(false)}
-              className="py-3 px-4 rounded-lg text-sm font-semibold text-center bg-orange-500 text-white"
-            >
-              Vous êtes organisateur ?
-            </Link>
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileOpen(false)}
-                className={`py-3 px-4 rounded-lg text-sm uppercase tracking-wide font-medium transition-colors ${link.match(location.pathname) ? 'text-white bg-white/10' : 'text-white/80 hover:text-white hover:bg-white/5'}`}
-              >
-                {link.label}
+                Dashboard
               </Link>
-            ))}
-            {!user && (
+              <button
+                onClick={handleSignOut}
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#FFFFFF",
+                  background: "#FF6B1A",
+                  border: "none",
+                  borderRadius: "50px",
+                  padding: "9px 20px",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 12px rgba(255,107,26,0.3)",
+                  transition: "background 0.15s",
+                  minHeight: "36px",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#E85A0C")}
+                onMouseLeave={e => (e.currentTarget.style.background = "#FF6B1A")}
+              >
+                Se déconnecter
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/auth"
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "#141414",
+                  background: "none",
+                  border: "1.5px solid #E8E5DF",
+                  borderRadius: "50px",
+                  padding: "8px 18px",
+                  textDecoration: "none",
+                  transition: "border-color 0.15s, color 0.15s",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  minHeight: "36px",
+                }}
+              >
+                Se connecter
+              </Link>
               <Link
                 to="/auth?tab=signup"
-                onClick={() => setMobileOpen(false)}
-                className="mt-2 py-3 px-4 rounded-lg text-sm font-medium text-center text-white/70 hover:text-white"
+                style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#FFFFFF",
+                  background: "#FF6B1A",
+                  border: "none",
+                  borderRadius: "50px",
+                  padding: "9px 20px",
+                  textDecoration: "none",
+                  boxShadow: "0 2px 12px rgba(255,107,26,0.3)",
+                  transition: "background 0.15s, transform 0.15s",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  minHeight: "36px",
+                }}
               >
-                Connexion / Inscription
+                Vous êtes organisateur ?
               </Link>
+            </>
+          )}
+        </div>
+
+        {/* Hamburger mobile */}
+        <button
+          className="md:hidden"
+          onClick={() => setMenuOpen(!menuOpen)}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "8px",
+            minHeight: "auto",
+            display: "flex",
+            alignItems: "center",
+          }}
+          aria-label="Menu"
+        >
+          {menuOpen
+            ? <X size={22} color="#141414" />
+            : <Menu size={22} color="#141414" />
+          }
+        </button>
+      </nav>
+
+      {/* Menu mobile */}
+      {menuOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: "60px", left: 0, right: 0,
+            zIndex: 199,
+            background: "rgba(255,255,255,0.98)",
+            backdropFilter: "blur(20px)",
+            borderBottom: "1px solid #E8E5DF",
+            padding: "20px 24px 28px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+          }}
+        >
+          {[
+            { label: "Événements",             to: "/events" },
+            { label: "Clubs",                  to: "/clubs" },
+            { label: "Calendrier",             to: "/calendar" },
+            { label: "Pour les organisateurs", to: "/organisateurs" },
+          ].map(({ label, to }) => (
+            <Link
+              key={to}
+              to={to}
+              style={{
+                fontSize: "16px",
+                fontWeight: to === "/organisateurs" ? 600 : 500,
+                color: to === "/organisateurs" ? "#FF6B1A" : "#141414",
+                padding: "12px 0",
+                borderBottom: "1px solid #F2EFE9",
+                textDecoration: "none",
+                display: "block",
+              }}
+            >
+              {label}
+            </Link>
+          ))}
+          <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  style={{
+                    textAlign: "center",
+                    padding: "12px",
+                    border: "1.5px solid #E8E5DF",
+                    borderRadius: "50px",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "#141414",
+                    textDecoration: "none",
+                  }}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  style={{
+                    background: "#FF6B1A",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50px",
+                    padding: "12px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    minHeight: "44px",
+                  }}
+                >
+                  Se déconnecter
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/auth"
+                  style={{
+                    textAlign: "center",
+                    padding: "12px",
+                    border: "1.5px solid #E8E5DF",
+                    borderRadius: "50px",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "#141414",
+                    textDecoration: "none",
+                  }}
+                >
+                  Se connecter
+                </Link>
+                <Link
+                  to="/auth?tab=signup"
+                  style={{
+                    textAlign: "center",
+                    background: "#FF6B1A",
+                    color: "white",
+                    borderRadius: "50px",
+                    padding: "12px",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    display: "block",
+                  }}
+                >
+                  Vous êtes organisateur ?
+                </Link>
+              </>
             )}
           </div>
         </div>
       )}
-    </nav>
+
+      {/* Spacer hauteur nav */}
+      <div style={{ height: "60px" }} />
+    </>
   );
 };
