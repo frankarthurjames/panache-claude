@@ -18,19 +18,15 @@ export const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    const check = () => setIsMobile(window.innerWidth < 900);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
+  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const handleSignOut = async () => { await supabase.auth.signOut(); };
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
@@ -39,44 +35,47 @@ export const Navbar = () => {
     <>
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
-        height: "60px", display: "flex", alignItems: "center",
-        justifyContent: "space-between", padding: "0 40px",
+        height: "64px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 40px",
         background: "rgba(255,255,255,0.96)",
         backdropFilter: "blur(20px) saturate(1.8)",
-        borderBottom: scrolled ? "1px solid rgba(0,0,0,0.10)" : "1px solid rgba(0,0,0,0.07)",
+        borderBottom: scrolled
+          ? "1px solid rgba(0,0,0,0.10)"
+          : "1px solid rgba(0,0,0,0.07)",
         transition: "border-color 0.15s ease",
       }}>
 
-        {/* Logo */}
+        {/* ── Logo — toujours visible ── */}
         <Link to="/" style={{
-          fontFamily: "'Poppins', sans-serif",
-          fontSize: "20px", fontWeight: 800,
-          color: "#FF6B1A", letterSpacing: "-0.5px",
-          textDecoration: "none", display: "flex",
-          alignItems: "center", gap: "7px",
+          display: "flex", alignItems: "center", gap: "8px",
+          textDecoration: "none", flexShrink: 0,
         }}>
           <img
             src="/panachP.png"
-            alt="Panache"
-            style={{ height: "28px", width: "auto" }}
-            onError={e => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-              const sib = e.currentTarget.nextElementSibling as HTMLElement;
-              if (sib) sib.style.display = "flex";
-            }}
+            alt=""
+            aria-hidden="true"
+            style={{ height: "26px", width: "auto", display: "block" }}
+            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
           />
-          <span style={{ display: "none", alignItems: "center", gap: "7px" }}>
-            <span style={{
-              width: "7px", height: "7px", background: "#FF6B1A",
-              borderRadius: "50%", opacity: 0.7, display: "inline-block",
-            }} />
+          <span style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: "20px",
+            fontWeight: 800,
+            color: "#FF6B1A",
+            letterSpacing: "-0.5px",
+            lineHeight: 1,
+          }}>
             Panache
           </span>
         </Link>
 
-        {/* Nav links — desktop uniquement */}
+        {/* ── Nav desktop ── */}
         {!isMobile && (
-          <ul style={{ display: "flex", gap: "28px", listStyle: "none", margin: 0, padding: 0 }}>
+          <ul style={{
+            display: "flex", gap: "32px",
+            listStyle: "none", margin: 0, padding: 0,
+          }}>
             {[
               { label: "Événements", to: "/events" },
               { label: "Clubs",      to: "/clubs" },
@@ -84,11 +83,12 @@ export const Navbar = () => {
             ].map(({ label, to }) => (
               <li key={to}>
                 <Link to={to} style={{
-                  fontSize: "13px",
+                  fontSize: "14px",
                   fontWeight: isActive(to) ? 600 : 500,
                   color: isActive(to) ? "#FF6B1A" : "#6B6B6B",
                   textDecoration: "none",
                   transition: "color 0.15s",
+                  fontFamily: "'DM Sans', sans-serif",
                 }}>
                   {label}
                 </Link>
@@ -96,8 +96,9 @@ export const Navbar = () => {
             ))}
             <li>
               <Link to="/organisateurs" style={{
-                fontSize: "13px", fontWeight: 600,
+                fontSize: "14px", fontWeight: 600,
                 color: "#FF6B1A", textDecoration: "none",
+                fontFamily: "'DM Sans', sans-serif",
               }}>
                 Pour les organisateurs
               </Link>
@@ -105,33 +106,31 @@ export const Navbar = () => {
           </ul>
         )}
 
-        {/* Actions — desktop */}
+        {/* ── Actions desktop ── */}
         {!isMobile && (
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexShrink: 0 }}>
             {user ? (
               <>
                 <Link to="/dashboard" style={{
                   fontFamily: "'DM Sans', sans-serif",
-                  fontSize: "13px", fontWeight: 500, color: "#141414",
+                  fontSize: "14px", fontWeight: 500, color: "#141414",
                   background: "none", border: "1.5px solid #E8E5DF",
-                  borderRadius: "50px", padding: "8px 18px",
+                  borderRadius: "50px", padding: "9px 20px",
                   textDecoration: "none", display: "inline-flex",
-                  alignItems: "center", minHeight: "36px",
+                  alignItems: "center", minHeight: "40px",
                   transition: "border-color 0.15s, color 0.15s",
                 }}>
                   Dashboard
                 </Link>
-                <button
-                  onClick={handleSignOut}
-                  style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: "13px", fontWeight: 600,
-                    color: "#FFFFFF", background: "#FF6B1A",
-                    border: "none", borderRadius: "50px",
-                    padding: "9px 20px", cursor: "pointer",
-                    boxShadow: "0 2px 12px rgba(255,107,26,0.3)",
-                    transition: "background 0.15s", minHeight: "36px",
-                  }}
+                <button onClick={handleSignOut} style={{
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "14px", fontWeight: 600,
+                  color: "#FFFFFF", background: "#FF6B1A",
+                  border: "none", borderRadius: "50px",
+                  padding: "9px 22px", cursor: "pointer",
+                  boxShadow: "0 2px 12px rgba(255,107,26,0.3)",
+                  transition: "background 0.15s", minHeight: "40px",
+                }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#E85A0C")}
                   onMouseLeave={e => (e.currentTarget.style.background = "#FF6B1A")}
                 >
@@ -142,25 +141,24 @@ export const Navbar = () => {
               <>
                 <Link to="/auth" style={{
                   fontFamily: "'DM Sans', sans-serif",
-                  fontSize: "13px", fontWeight: 500, color: "#141414",
+                  fontSize: "14px", fontWeight: 500, color: "#141414",
                   background: "none", border: "1.5px solid #E8E5DF",
-                  borderRadius: "50px", padding: "8px 18px",
+                  borderRadius: "50px", padding: "9px 20px",
                   textDecoration: "none", display: "inline-flex",
-                  alignItems: "center", minHeight: "36px",
+                  alignItems: "center", minHeight: "40px",
                   transition: "border-color 0.15s, color 0.15s",
                 }}>
                   Se connecter
                 </Link>
                 <Link to="/auth?tab=signup" style={{
                   fontFamily: "'DM Sans', sans-serif",
-                  fontSize: "13px", fontWeight: 600,
+                  fontSize: "14px", fontWeight: 600,
                   color: "#FFFFFF", background: "#FF6B1A",
                   border: "none", borderRadius: "50px",
-                  padding: "9px 20px", textDecoration: "none",
+                  padding: "9px 22px", textDecoration: "none",
                   boxShadow: "0 2px 12px rgba(255,107,26,0.3)",
-                  transition: "background 0.15s, transform 0.15s",
-                  display: "inline-flex", alignItems: "center",
-                  minHeight: "36px",
+                  transition: "background 0.15s",
+                  display: "inline-flex", alignItems: "center", minHeight: "40px",
                 }}>
                   Vous êtes organisateur ?
                 </Link>
@@ -169,27 +167,31 @@ export const Navbar = () => {
           </div>
         )}
 
-        {/* Hamburger — mobile uniquement */}
+        {/* ── Hamburger mobile ── */}
         {isMobile && (
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             style={{
-              background: "none", border: "none",
-              cursor: "pointer", padding: "8px",
-              minHeight: "auto", display: "flex", alignItems: "center",
+              background: "none", border: "none", cursor: "pointer",
+              padding: "8px", minHeight: "auto",
+              display: "flex", alignItems: "center",
             }}
             aria-label="Menu"
           >
-            {menuOpen ? <X size={22} color="#141414" /> : <Menu size={22} color="#141414" />}
+            {menuOpen
+              ? <X size={22} color="#141414" />
+              : <Menu size={22} color="#141414" />
+            }
           </button>
         )}
       </nav>
 
-      {/* Menu mobile dépliant */}
+      {/* ── Menu mobile ── */}
       {isMobile && menuOpen && (
         <div style={{
-          position: "fixed", top: "60px", left: 0, right: 0, zIndex: 199,
-          background: "rgba(255,255,255,0.98)", backdropFilter: "blur(20px)",
+          position: "fixed", top: "64px", left: 0, right: 0, zIndex: 199,
+          background: "rgba(255,255,255,0.98)",
+          backdropFilter: "blur(20px)",
           borderBottom: "1px solid #E8E5DF",
           padding: "20px 24px 28px",
           display: "flex", flexDirection: "column", gap: "4px",
@@ -204,7 +206,7 @@ export const Navbar = () => {
               fontSize: "16px",
               fontWeight: to === "/organisateurs" ? 600 : 500,
               color: to === "/organisateurs" ? "#FF6B1A" : "#141414",
-              padding: "12px 0",
+              padding: "13px 0",
               borderBottom: "1px solid #F2EFE9",
               textDecoration: "none", display: "block",
             }}>
@@ -215,18 +217,18 @@ export const Navbar = () => {
             {user ? (
               <>
                 <Link to="/dashboard" style={{
-                  textAlign: "center", padding: "12px",
+                  textAlign: "center", padding: "13px",
                   border: "1.5px solid #E8E5DF", borderRadius: "50px",
-                  fontSize: "14px", fontWeight: 500,
+                  fontSize: "15px", fontWeight: 500,
                   color: "#141414", textDecoration: "none",
                 }}>
                   Dashboard
                 </Link>
                 <button onClick={handleSignOut} style={{
-                  background: "#FF6B1A", color: "white", border: "none",
-                  borderRadius: "50px", padding: "12px",
-                  fontSize: "14px", fontWeight: 600,
-                  cursor: "pointer", minHeight: "44px",
+                  background: "#FF6B1A", color: "white",
+                  border: "none", borderRadius: "50px",
+                  padding: "13px", fontSize: "15px", fontWeight: 600,
+                  cursor: "pointer", minHeight: "48px",
                 }}>
                   Se déconnecter
                 </button>
@@ -234,17 +236,17 @@ export const Navbar = () => {
             ) : (
               <>
                 <Link to="/auth" style={{
-                  textAlign: "center", padding: "12px",
+                  textAlign: "center", padding: "13px",
                   border: "1.5px solid #E8E5DF", borderRadius: "50px",
-                  fontSize: "14px", fontWeight: 500,
+                  fontSize: "15px", fontWeight: 500,
                   color: "#141414", textDecoration: "none",
                 }}>
                   Se connecter
                 </Link>
                 <Link to="/auth?tab=signup" style={{
                   textAlign: "center", background: "#FF6B1A",
-                  color: "white", borderRadius: "50px", padding: "12px",
-                  fontSize: "14px", fontWeight: 600,
+                  color: "white", borderRadius: "50px", padding: "13px",
+                  fontSize: "15px", fontWeight: 600,
                   textDecoration: "none", display: "block",
                 }}>
                   Vous êtes organisateur ?
@@ -256,7 +258,7 @@ export const Navbar = () => {
       )}
 
       {/* Spacer */}
-      <div style={{ height: "60px" }} />
+      <div style={{ height: "64px" }} />
     </>
   );
 };
