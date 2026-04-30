@@ -216,7 +216,7 @@ const CalendarPage = () => {
                         className="font-poppins font-bold"
                         style={{
                           fontSize: "14px",
-                          color: hasFiche ? "#1A1A1A" : "#888",
+                          color: "#1A1A1A",
                           letterSpacing: "-0.01em",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -268,7 +268,7 @@ const CalendarPage = () => {
                         </a>
                       ) : (
                         <a
-                          href={`/claim-event?id=${event.id}`}
+                          href={`/claim-event/${event.id}`}
                           style={{
                             fontSize: "12px",
                             fontWeight: 600,
