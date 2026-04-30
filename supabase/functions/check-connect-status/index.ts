@@ -13,34 +13,35 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Checking connect status");
-
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Récupérer l'ID de l'organisation
     const { organizationId } = await req.json();
-    console.log("Organization ID:", organizationId);
 
-    // Récupérer les données de l'organisation (avec service role, pas de RLS)
+    if (!organizationId) {
+      return new Response(JSON.stringify({
+        connected: false,
+        details_submitted: false,
+        charges_enabled: false
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     const { data: orgData, error: orgError } = await supabaseClient
       .from('organizations')
       .select('stripe_account_id')
       .eq('id', organizationId)
       .single();
 
-    if (orgError || !orgData) {
-      console.error("Error fetching organization:", orgError);
-      throw new Error("Organization not found");
-    }
-
-    if (!orgData.stripe_account_id) {
-      return new Response(JSON.stringify({ 
+    if (orgError || !orgData?.stripe_account_id) {
+      return new Response(JSON.stringify({
         connected: false,
         details_submitted: false,
-        charges_enabled: false 
+        charges_enabled: false
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -51,20 +52,13 @@ serve(async (req) => {
       apiVersion: "2024-12-18.acacia",
     });
 
-    // Vérifier le statut du compte Stripe
     const account = await stripe.accounts.retrieve(orgData.stripe_account_id);
-    console.log("Account status:", {
-      id: account.id,
-      details_submitted: account.details_submitted,
-      charges_enabled: account.charges_enabled
-    });
 
     return new Response(JSON.stringify({
       connected: true,
       accountId: account.id,
       details_submitted: account.details_submitted,
       charges_enabled: account.charges_enabled,
-      business_profile: account.business_profile
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -72,7 +66,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("Error in check-connect-status:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : "Unknown error"
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
