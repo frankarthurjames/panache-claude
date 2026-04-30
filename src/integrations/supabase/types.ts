@@ -64,49 +64,76 @@ export type Database = {
       }
       events: {
         Row: {
+          audience: string | null
           capacity: number | null
           city: string | null
           created_at: string | null
           description: string | null
           ends_at: string
+          featured_order: number | null
           id: string
           images: Json | null
+          is_featured: boolean | null
+          level: string | null
           organization_id: string | null
+          pmr_access: boolean | null
+          region: string | null
+          sport_id: string | null
           starts_at: string
           status: Database["public"]["Enums"]["event_status"] | null
           title: string
+          transport: string | null
           updated_at: string | null
           venue: string | null
+          venue_type: string | null
         }
         Insert: {
+          audience?: string | null
           capacity?: number | null
           city?: string | null
           created_at?: string | null
           description?: string | null
           ends_at: string
+          featured_order?: number | null
           id?: string
           images?: Json | null
+          is_featured?: boolean | null
+          level?: string | null
           organization_id?: string | null
+          pmr_access?: boolean | null
+          region?: string | null
+          sport_id?: string | null
           starts_at: string
           status?: Database["public"]["Enums"]["event_status"] | null
           title: string
+          transport?: string | null
           updated_at?: string | null
           venue?: string | null
+          venue_type?: string | null
         }
         Update: {
+          audience?: string | null
           capacity?: number | null
           city?: string | null
           created_at?: string | null
           description?: string | null
           ends_at?: string
+          featured_order?: number | null
           id?: string
           images?: Json | null
+          is_featured?: boolean | null
+          level?: string | null
           organization_id?: string | null
+          pmr_access?: boolean | null
+          region?: string | null
+          sport_id?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["event_status"] | null
           title?: string
+          transport?: string | null
           updated_at?: string | null
           venue?: string | null
+          venue_type?: string | null
         }
         Relationships: [
           {
