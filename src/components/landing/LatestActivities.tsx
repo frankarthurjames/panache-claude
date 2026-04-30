@@ -35,9 +35,9 @@ export const LatestActivities = () => {
   }, []);
 
   if (loading) return (
-    <section className="py-14 px-4 sm:px-6 lg:px-8">
-      <div className="container mx-auto flex justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+    <section style={{ padding: "80px 0", background: "#FAF8F5" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px", display: "flex", justifyContent: "center" }}>
+        <Loader2 style={{ width: 32, height: 32, color: "#FF6B1A" }} className="animate-spin" />
       </div>
     </section>
   );
@@ -45,22 +45,34 @@ export const LatestActivities = () => {
   if (activities.length === 0) return null;
 
   return (
-    <section className="py-14 px-4 sm:px-6 lg:px-8">
-      <div className="container mx-auto">
-        <div className="flex items-baseline justify-between mb-8">
-          <h2
-            className="font-poppins font-extrabold text-[#1A1A1A] tracking-[-0.02em]"
-            style={{ fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)" }}
+    <section style={{ padding: "80px 0", background: "#FAF8F5" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px" }}>
+
+        <div
+          className="reveal"
+          style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "36px" }}
+        >
+          <div>
+            <span className="eyebrow">À ne pas manquer</span>
+            <h2 className="sec-title">Événements à venir</h2>
+          </div>
+          <Link
+            to="/events"
+            style={{
+              fontSize: "13px", fontWeight: 600, color: "#FF6B1A",
+              textDecoration: "none", borderBottom: "1.5px solid #FF6B1A",
+              paddingBottom: "1px", whiteSpace: "nowrap", flexShrink: 0,
+            }}
           >
-            Les événements à venir
-          </h2>
-          <Link to="/events" className="text-[#F97316] text-sm font-semibold hover:underline">
             Voir tout →
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {activities.map((activity: any) => {
+        <div
+          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "18px" }}
+          className="ev-grid-responsive"
+        >
+          {activities.map((activity: any, idx) => {
             const imageUrl = activity.images?.length > 0 ? activity.images[0] : FALLBACK;
             const minPrice = activity.ticket_types?.length > 0
               ? Math.min(...activity.ticket_types.map((t: any) => t.price_cents))
@@ -75,50 +87,118 @@ export const LatestActivities = () => {
             return (
               <button
                 key={activity.id}
+                className="reveal"
                 onClick={() => navigate(`/events/${activity.id}`)}
-                className="group relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-200 text-left block w-full"
+                style={{
+                  background: "white",
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  border: "1.5px solid #E8E5DF",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  textAlign: "left",
+                  padding: 0,
+                  transition: "transform 0.15s cubic-bezier(0.22,1,0.36,1), box-shadow 0.15s, border-color 0.15s",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = "translateY(-5px)";
+                  e.currentTarget.style.boxShadow = "0 14px 40px rgba(0,0,0,0.10)";
+                  e.currentTarget.style.borderColor = "rgba(255,107,26,0.22)";
+                  const img = e.currentTarget.querySelector("img") as HTMLImageElement;
+                  if (img) img.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.05)";
+                  e.currentTarget.style.borderColor = "#E8E5DF";
+                  const img = e.currentTarget.querySelector("img") as HTMLImageElement;
+                  if (img) img.style.transform = "none";
+                }}
               >
-                <img
-                  src={imageUrl}
-                  alt={cleanTitle}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/20 to-transparent" />
-                <div className="absolute top-4 left-4">
-                  <span className="bg-[#0A0A0A] text-white text-[10px] font-bold uppercase tracking-[0.08em] px-3 py-1.5 rounded-full">
+                <div style={{ height: "160px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+                  <img
+                    src={imageUrl}
+                    alt={cleanTitle}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.4s cubic-bezier(0.22,1,0.36,1)" }}
+                  />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 55%)" }} />
+                  <span style={{
+                    position: "absolute", top: "12px", left: "12px", zIndex: 2,
+                    background: "rgba(255,255,255,0.94)", backdropFilter: "blur(6px)",
+                    color: "#141414", fontSize: "9px", fontWeight: 700,
+                    letterSpacing: "0.8px", textTransform: "uppercase",
+                    padding: "4px 10px", borderRadius: "50px",
+                  }}>
                     {sport}
                   </span>
                 </div>
-                <div className="absolute top-4 right-4">
-                  <span className={`text-white text-[10px] font-bold px-3 py-1.5 rounded-full ${isFree ? "bg-[#16A34A]" : "bg-[#F97316]"}`}>
-                    {priceDisplay}
-                  </span>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <h3
-                    className="font-poppins font-bold text-white leading-tight tracking-[-0.01em] line-clamp-2 mb-2"
-                    style={{ fontSize: "clamp(1rem, 1.5vw, 1.2rem)" }}
-                  >
+
+                <div style={{ padding: "16px 18px 18px", display: "flex", flexDirection: "column", flex: 1, gap: "8px" }}>
+                  <h3 style={{
+                    fontFamily: "'Poppins', sans-serif", fontWeight: 700,
+                    fontSize: "15px", color: "#141414",
+                    lineHeight: 1.3, letterSpacing: "-0.02em",
+                    display: "-webkit-box", WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical", overflow: "hidden",
+                  }}>
                     {cleanTitle}
                   </h3>
-                  <p className="text-white/70 text-xs font-medium uppercase tracking-wider">
-                    {dateStr}{city ? ` · ${city}` : ""}
-                  </p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                    <span style={{ fontSize: "11px", color: "#6B6B6B" }}>{dateStr}</span>
+                    {city && <span style={{ fontSize: "11px", color: "#6B6B6B" }}>{city}</span>}
+                  </div>
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    paddingTop: "12px", borderTop: "1px solid #E8E5DF", marginTop: "auto",
+                  }}>
+                    <span style={{
+                      fontSize: "10px", fontWeight: isFree ? 600 : 700,
+                      color: isFree ? "#166534" : "#9A3412",
+                      background: isFree ? "#DCFCE7" : "#FFF2EB",
+                      padding: "4px 10px", borderRadius: "50px",
+                    }}>
+                      {priceDisplay}
+                    </span>
+                    <span style={{ fontSize: "11px", fontWeight: 600, color: "#FF6B1A" }}>
+                      Voir →
+                    </span>
+                  </div>
                 </div>
               </button>
             );
           })}
         </div>
 
-        <div className="mt-10 flex justify-center">
+        <div style={{ marginTop: "40px", display: "flex", justifyContent: "center" }}>
           <Link
             to="/events"
-            className="border border-[#E8E8E8] hover:border-[#F97316] text-[#1A1A1A] hover:text-[#F97316] font-semibold text-sm px-8 py-3 rounded-full transition-colors"
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "14px", fontWeight: 600, color: "#141414",
+              border: "1.5px solid #E8E5DF", borderRadius: "50px",
+              padding: "12px 28px", textDecoration: "none",
+              transition: "border-color 0.15s, color 0.15s", display: "inline-block",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = "#FF6B1A";
+              e.currentTarget.style.color = "#FF6B1A";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = "#E8E5DF";
+              e.currentTarget.style.color = "#141414";
+            }}
           >
             Voir tous les événements
           </Link>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 960px) { .ev-grid-responsive { grid-template-columns: repeat(2, 1fr) !important; } }
+        @media (max-width: 640px) { .ev-grid-responsive { grid-template-columns: 1fr !important; } }
+      `}</style>
     </section>
   );
 };
