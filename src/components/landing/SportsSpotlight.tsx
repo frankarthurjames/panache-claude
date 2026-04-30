@@ -1,5 +1,5 @@
-
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
@@ -8,6 +8,7 @@ const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1461896836934-ffe607ba
 export const SportsSpotlight = () => {
   const [sports, setSports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSports = async () => {
@@ -61,12 +62,12 @@ export const SportsSpotlight = () => {
         <h2 className="text-3xl font-bold text-gray-900 mb-8 max-w-7xl mx-auto">Les sports à la une</h2>
       </div>
       <div className="overflow-x-auto pb-4 scrollbar-hide">
-        <div className="flex gap-4 px-4 sm:px-6 lg:px-8" style={{ width: 'max-content' }}>
+        <div className="flex flex-wrap justify-center gap-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           {sports.map((sport: any) => (
-            <a
+            <button
               key={sport.id}
-              href={`/events?sport=${sport.slug}`}
-              className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0"
+              onClick={() => navigate(`/events?sport=${sport.slug}`)}
+              className="relative rounded-xl overflow-hidden cursor-pointer group flex-shrink-0 text-left"
               style={{ width: '160px', height: '200px' }}
             >
               <img
@@ -83,7 +84,7 @@ export const SportsSpotlight = () => {
                   </p>
                 )}
               </div>
-            </a>
+            </button>
           ))}
         </div>
       </div>
