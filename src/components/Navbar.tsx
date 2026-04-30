@@ -48,26 +48,14 @@ export const Navbar = () => {
 
         {/* ── Logo — toujours visible ── */}
         <Link to="/" style={{
-          display: "flex", alignItems: "center", gap: "8px",
+          display: "flex", alignItems: "center",
           textDecoration: "none", flexShrink: 0,
         }}>
           <img
             src="/panachP.png"
-            alt=""
-            aria-hidden="true"
-            style={{ height: "26px", width: "auto", display: "block" }}
-            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            alt="Panache"
+            style={{ height: "32px", width: "auto", display: "block" }}
           />
-          <span style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontSize: "20px",
-            fontWeight: 800,
-            color: "#FF6B1A",
-            letterSpacing: "-0.5px",
-            lineHeight: 1,
-          }}>
-            Panache
-          </span>
         </Link>
 
         {/* ── Nav desktop ── */}
