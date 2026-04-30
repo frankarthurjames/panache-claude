@@ -13,7 +13,7 @@ export const FeaturedEvents = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchFeatured = async () => {
       try {
         const { data } = await supabase
           .from("events")
@@ -30,13 +30,15 @@ export const FeaturedEvents = () => {
         setLoading(false);
       }
     };
-    fetch();
+    fetchFeatured();
   }, []);
 
   if (loading) return (
-    <section className="bg-[#0A0A0A] py-14 flex justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
-    </section>
+    <div className="px-4 sm:px-6 lg:px-8 py-14">
+      <div className="bg-[#0A0A0A] rounded-3xl flex justify-center py-14">
+        <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+      </div>
+    </div>
   );
 
   if (events.length === 0) return null;
@@ -55,8 +57,9 @@ export const FeaturedEvents = () => {
   const [main, ...rest] = events;
 
   return (
-    <section className="bg-[#0A0A0A] py-14 px-4 sm:px-6 lg:px-8">
-      <div className="container mx-auto">
+    <section className="py-14 px-4 sm:px-6 lg:px-8">
+      <div className="bg-[#0A0A0A] rounded-3xl p-8">
+
         <div className="flex items-baseline justify-between mb-8">
           <h2
             className="font-poppins font-extrabold text-white tracking-[-0.02em]"
@@ -67,31 +70,31 @@ export const FeaturedEvents = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-          {/* Grande card gauche — 3/5 */}
           {main && (
             <button
               onClick={() => navigate(`/events/${main.id}`)}
               className="lg:col-span-3 group rounded-2xl overflow-hidden bg-[#141414] border border-white/10 text-left flex flex-col"
             >
-              <div className="relative w-full overflow-hidden" style={{ height: "280px" }}>
+              <div style={{ height: "280px", position: "relative", width: "100%", overflow: "hidden" }}>
                 <img
                   src={getImage(main)}
                   alt={cleanTitle(main.title)}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }}
+                  className="group-hover:scale-105"
                 />
-                <div className="absolute top-4 left-4 flex gap-2">
-                  <span className="bg-[#F97316] text-white text-[10px] font-bold uppercase tracking-[0.08em] px-3 py-1.5 rounded-full">
+                <div style={{ position: "absolute", top: "16px", left: "16px", display: "flex", gap: "8px" }}>
+                  <span style={{ background: "#F97316", color: "white", fontSize: "10px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "6px 12px", borderRadius: "100px" }}>
                     {getSport(main)}
                   </span>
                   {isFree(main) && (
-                    <span className="bg-[#16A34A] text-white text-[10px] font-bold px-3 py-1.5 rounded-full">
+                    <span style={{ background: "#16A34A", color: "white", fontSize: "10px", fontWeight: 700, padding: "6px 12px", borderRadius: "100px" }}>
                       Gratuit
                     </span>
                   )}
                 </div>
               </div>
               <div className="p-6 flex-1">
-                <p className="text-white/50 text-xs font-medium uppercase tracking-wider mb-2">
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "11px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
                   {getDate(main)}{main.city ? ` · ${main.city}` : ""}
                 </p>
                 <h3
@@ -101,7 +104,7 @@ export const FeaturedEvents = () => {
                   {cleanTitle(main.title)}
                 </h3>
                 {getPrice(main) && (
-                  <p className="mt-3 text-[#F97316] font-semibold text-sm">
+                  <p style={{ marginTop: "12px", color: "#F97316", fontWeight: 600, fontSize: "14px" }}>
                     {getPrice(main)}
                   </p>
                 )}
@@ -109,7 +112,6 @@ export const FeaturedEvents = () => {
             </button>
           )}
 
-          {/* 2 petites cards droite — 2/5 */}
           {rest.length > 0 && (
             <div className="lg:col-span-2 flex flex-col gap-4">
               {rest.map((e: any) => (
@@ -118,32 +120,33 @@ export const FeaturedEvents = () => {
                   onClick={() => navigate(`/events/${e.id}`)}
                   className="group rounded-2xl overflow-hidden bg-[#141414] border border-white/10 text-left flex flex-col flex-1"
                 >
-                  <div className="relative w-full overflow-hidden" style={{ height: "130px" }}>
+                  <div style={{ height: "130px", position: "relative", width: "100%", overflow: "hidden" }}>
                     <img
                       src={getImage(e)}
                       alt={cleanTitle(e.title)}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }}
+                      className="group-hover:scale-105"
                     />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      <span className="bg-[#F97316] text-white text-[9px] font-bold uppercase tracking-[0.08em] px-2.5 py-1 rounded-full">
+                    <div style={{ position: "absolute", top: "12px", left: "12px", display: "flex", gap: "6px" }}>
+                      <span style={{ background: "#F97316", color: "white", fontSize: "9px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 10px", borderRadius: "100px" }}>
                         {getSport(e)}
                       </span>
                       {isFree(e) && (
-                        <span className="bg-[#16A34A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full">
+                        <span style={{ background: "#16A34A", color: "white", fontSize: "9px", fontWeight: 700, padding: "4px 10px", borderRadius: "100px" }}>
                           Gratuit
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="p-4 flex-1">
-                    <p className="text-white/50 text-[10px] font-medium uppercase tracking-wider mb-1.5">
+                    <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>
                       {getDate(e)}{e.city ? ` · ${e.city}` : ""}
                     </p>
                     <h3 className="font-poppins font-bold text-white text-sm leading-tight tracking-[-0.01em] line-clamp-2">
                       {cleanTitle(e.title)}
                     </h3>
                     {getPrice(e) && (
-                      <p className="mt-2 text-[#F97316] font-semibold text-xs">
+                      <p style={{ marginTop: "8px", color: "#F97316", fontWeight: 600, fontSize: "12px" }}>
                         {getPrice(e)}
                       </p>
                     )}
