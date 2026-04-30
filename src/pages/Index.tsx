@@ -1,8 +1,9 @@
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/landing/Hero";
-import { SportsSpotlight } from "@/components/landing/SportsSpotlight";
+import { FeaturedEvents } from "@/components/landing/FeaturedEvents";
 import { LatestActivities } from "@/components/landing/LatestActivities";
+import { SportsSpotlight } from "@/components/landing/SportsSpotlight";
 import { RegionsGrid } from "@/components/landing/RegionsGrid";
 import { MonthlyCalendar } from "@/components/landing/MonthlyCalendar";
 import { CtaBand } from "@/components/landing/CtaBand";
@@ -41,6 +42,7 @@ const Index = () => {
       <Hero stats={{ totalEvents: 0, totalTickets: 0, satisfaction: 0 }} loading={false} />
       <StatsBar />
       <main>
+        <FeaturedEvents />
         <LatestActivities />
         <SportsSpotlight />
         <RegionsGrid />
