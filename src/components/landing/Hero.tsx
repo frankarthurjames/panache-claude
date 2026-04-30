@@ -1,15 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { REGIONS } from "@/data/regions";
-
-interface HeroProps {
-  stats: { totalEvents: number; totalTickets: number; satisfaction: number };
-  loading: boolean;
-}
 
 const QUICK_SPORTS = ['Triathlon', 'Trail', 'Football', 'Cyclisme', 'Natation'];
 
@@ -20,6 +13,11 @@ const PLACEHOLDERS = [
   'Natation en Île-de-France...',
   'Cyclisme en mai...',
 ];
+
+interface HeroProps {
+  stats: { totalEvents: number; totalTickets: number; satisfaction: number };
+  loading: boolean;
+}
 
 export const Hero = ({ stats, loading }: HeroProps) => {
   const navigate = useNavigate();
@@ -63,30 +61,44 @@ export const Hero = ({ stats, loading }: HeroProps) => {
   };
 
   return (
-    <header className="relative h-[700px] flex items-center justify-center overflow-hidden">
+    <header className="relative h-[600px] md:h-[680px] flex items-center justify-center overflow-hidden">
+      {/* Background */}
       <div className="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1600&q=80"
           alt="Sport background"
-          className="h-full w-full object-cover brightness-50"
+          className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-[#0A0A0A]/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A]/40 via-transparent to-[#0A0A0A]/60" />
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 mt-16">
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 mt-8">
+        {/* Eyebrow */}
+        <p className="text-[#F97316] text-xs font-bold uppercase tracking-[0.14em] mb-5">
+          La billetterie du sport amateur
+        </p>
+
+        {/* H1 */}
+        <h1 className="font-poppins font-extrabold text-white leading-[1.06] tracking-[-0.03em] mb-5"
+            style={{ fontSize: 'clamp(2rem, 5vw, 4rem)' }}>
           Les événements sportifs<br />près de chez vous.
         </h1>
 
-        <div className="max-w-3xl mx-auto">
+        <p className="text-white/70 text-base mb-8 max-w-lg mx-auto leading-relaxed">
+          Découvrez et réservez vos billets pour tous les événements sportifs en France.
+        </p>
+
+        {/* Search box */}
+        <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
 
-            {/* Ligne du haut — placeholder rotatif */}
+            {/* Top — placeholder rotatif */}
             <div
-              className="px-6 py-4 cursor-pointer"
+              className="px-6 py-4 cursor-pointer border-b border-gray-100"
               onClick={() => setActivePanel(activePanel ? null : 'sport')}
             >
-              <p className="text-xs font-bold text-gray-900 uppercase tracking-wide mb-1">
+              <p className="text-[10px] font-bold text-gray-900 uppercase tracking-[0.1em] mb-1">
                 Que cherchez-vous ?
               </p>
               <p className="text-gray-400 text-sm">
@@ -94,51 +106,44 @@ export const Hero = ({ stats, loading }: HeroProps) => {
               </p>
             </div>
 
-            <div className="border-t border-gray-100" />
-
-            {/* 3 pills en ligne */}
+            {/* 3 champs */}
             <div className="grid grid-cols-3 divide-x divide-gray-100">
-
               <button
                 onClick={() => setActivePanel(activePanel === 'sport' ? null : 'sport')}
-                className={`px-4 py-3 text-left transition-colors ${activePanel === 'sport' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
+                className={`px-5 py-3 text-left transition-colors ${activePanel === 'sport' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
               >
-                <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">Sport</p>
-                <p className="text-sm text-gray-500 truncate">
+                <p className="text-[10px] font-bold text-gray-900 uppercase tracking-[0.1em]">Sport</p>
+                <p className="text-sm text-gray-500 mt-0.5 truncate">
                   {sport ? sports.find(s => s.slug === sport)?.name : 'Tous'}
                 </p>
               </button>
 
               <button
                 onClick={() => setActivePanel(activePanel === 'region' ? null : 'region')}
-                className={`px-4 py-3 text-left transition-colors ${activePanel === 'region' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
+                className={`px-5 py-3 text-left transition-colors ${activePanel === 'region' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
               >
-                <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">Région</p>
-                <p className="text-sm text-gray-500 truncate">
-                  {region || 'Partout'}
-                </p>
+                <p className="text-[10px] font-bold text-gray-900 uppercase tracking-[0.1em]">Région</p>
+                <p className="text-sm text-gray-500 mt-0.5 truncate">{region || 'Partout'}</p>
               </button>
 
               <button
                 onClick={() => setActivePanel(activePanel === 'date' ? null : 'date')}
-                className={`px-4 py-3 text-left transition-colors ${activePanel === 'date' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
+                className={`px-5 py-3 text-left transition-colors ${activePanel === 'date' ? 'bg-orange-50' : 'hover:bg-gray-50'}`}
               >
-                <p className="text-xs font-bold text-gray-900 uppercase tracking-wide">Quand</p>
-                <p className="text-sm text-gray-500 truncate">
-                  {dateFilter || 'Peu importe'}
-                </p>
+                <p className="text-[10px] font-bold text-gray-900 uppercase tracking-[0.1em]">Quand</p>
+                <p className="text-sm text-gray-500 mt-0.5 truncate">{dateFilter || 'Peu importe'}</p>
               </button>
             </div>
 
             {/* Bouton rechercher */}
-            <div className="px-4 pb-4 pt-2">
-              <Button
+            <div className="px-4 pb-4 pt-3">
+              <button
                 onClick={goSearch}
-                className="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-base flex items-center justify-center gap-2"
+                className="w-full h-12 rounded-xl bg-[#F97316] hover:bg-[#EA6C0A] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
               >
-                <Search className="h-5 w-5" />
-                Rechercher
-              </Button>
+                <Search className="h-4 w-4" />
+                Rechercher un événement
+              </button>
             </div>
 
             {/* Panneaux dépliants */}
@@ -147,7 +152,7 @@ export const Hero = ({ stats, loading }: HeroProps) => {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => { setSport(''); setActivePanel(null); }}
-                    className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${!sport ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                    className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${!sport ? 'bg-[#F97316] text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
                   >
                     Tous les sports
                   </button>
@@ -155,7 +160,7 @@ export const Hero = ({ stats, loading }: HeroProps) => {
                     <button
                       key={s.slug}
                       onClick={() => { setSport(s.slug); setActivePanel(null); }}
-                      className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${sport === s.slug ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                      className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${sport === s.slug ? 'bg-[#F97316] text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
                     >
                       {s.name}
                     </button>
@@ -169,7 +174,7 @@ export const Hero = ({ stats, loading }: HeroProps) => {
                 <div className="grid grid-cols-1 gap-1">
                   <button
                     onClick={() => { setRegion(''); setActivePanel(null); }}
-                    className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${!region ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                    className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${!region ? 'bg-[#F97316] text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
                   >
                     Toutes les régions
                   </button>
@@ -177,7 +182,7 @@ export const Hero = ({ stats, loading }: HeroProps) => {
                     <button
                       key={r.name}
                       onClick={() => { setRegion(r.name); setActivePanel(null); }}
-                      className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${region === r.name ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                      className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${region === r.name ? 'bg-[#F97316] text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
                     >
                       {r.name}
                     </button>
@@ -193,7 +198,7 @@ export const Hero = ({ stats, loading }: HeroProps) => {
                     <button
                       key={label}
                       onClick={() => { setDateFilter(dateFilter === label ? '' : label); setActivePanel(null); }}
-                      className={`px-3 py-2 rounded-lg text-sm text-left transition-colors ${dateFilter === label ? 'bg-orange-500 text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
+                      className={`px-3 py-2 rounded-lg text-sm text-left transition-colors ${dateFilter === label ? 'bg-[#F97316] text-white font-medium' : 'hover:bg-gray-100 text-gray-700'}`}
                     >
                       {label}
                     </button>
@@ -209,7 +214,7 @@ export const Hero = ({ stats, loading }: HeroProps) => {
               <button
                 key={s}
                 onClick={() => navigate(`/events?sport=${s.toLowerCase()}`)}
-                className="bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-1.5 rounded-full backdrop-blur-sm transition-colors"
+                className="bg-white/15 hover:bg-white/25 text-white text-xs font-medium px-4 py-1.5 rounded-full border border-white/20 transition-colors"
               >
                 {s}
               </button>
