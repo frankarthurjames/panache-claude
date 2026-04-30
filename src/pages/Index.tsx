@@ -14,12 +14,12 @@ const StatsBar = () => (
       <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-[#E8E8E8]">
         {[
           { num: "1 000+", label: "événements" },
-          { num: "40+", label: "clubs actifs" },
-          { num: "0€", label: "pour publier" },
-          { num: "2%", label: "de commission" },
+          { num: "40+",    label: "clubs actifs" },
+          { num: "0€",     label: "pour publier" },
+          { num: "2%",     label: "de commission" },
         ].map(({ num, label }) => (
           <div key={label} className="py-4 px-6 text-center">
-            <p className="font-poppins font-extrabold text-xl text-[#F97316] leading-none">
+            <p className="font-poppins font-extrabold text-xl text-[#F97316] leading-none tracking-[-0.02em]">
               {num}
             </p>
             <p className="text-xs text-[#5A5A5A] font-medium mt-1">{label}</p>
@@ -38,19 +38,15 @@ const Index = () => {
         description="Découvrez et réservez vos billets pour tous les événements sportifs en France. 1000+ événements, 40+ clubs, billetterie sécurisée."
       />
       <Navbar />
-
       <Hero stats={{ totalEvents: 0, totalTickets: 0, satisfaction: 0 }} loading={false} />
-
       <StatsBar />
-
       <main>
-        <SportsSpotlight />
         <LatestActivities />
+        <SportsSpotlight />
         <RegionsGrid />
         <MonthlyCalendar />
         <CtaBand />
       </main>
-
       <Footer />
     </div>
   );
