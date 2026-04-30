@@ -379,7 +379,7 @@ const CtaBand = () => {
   const navigate = useNavigate();
   return (
     <section style={{ padding: "80px 0", background: "#FFFFFF" }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 40px" }}>
+      <div className="panache-wrap">
         <div
           className="reveal"
           style={{
