@@ -1,150 +1,262 @@
-
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ClubCard } from "@/components/ClubCard";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, ChevronDown, Loader2 } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Search, Loader2, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 
 interface Club {
-    id: string;
-    name: string;
-    category: string;
-    address: string | null;
-    logo_url: string | null;
+  id: string;
+  name: string;
+  category: string;
+  address: string | null;
+  logo_url: string | null;
+  eventCount?: number;
 }
 
+const SORTS = ["Nom", "Ville"];
+
 const Clubs = () => {
-    const [clubs, setClubs] = useState<Club[]>([]);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [sortBy, setSortBy] = useState("Nom");
-    const [loading, setLoading] = useState(true);
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("Nom");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchClubs = async () => {
-            try {
-                // Fetch all organizations (filtering by category 'club' is disabled as column is missing)
-                const { data, error } = await supabase
-                    .from('organizations')
-                    .select('id, name, address, logo_url');
+  useEffect(() => {
+    const fetchClubs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("organizations")
+          .select("id, name, address, logo_url");
+        if (error) throw error;
 
-                if (error) throw error;
-                // Add a mock category property to satisfy the interface
-                const clubsWithMockCategory = (data || []).map(org => ({
-                    ...org,
-                    category: 'Club'
-                }));
-                setClubs(clubsWithMockCategory);
-            } catch (error) {
-                console.error("Error fetching clubs:", error);
-                // Fallback to empty list or handle error appropriately
-            } finally {
-                setLoading(false);
-            }
-        };
+        const { data: eventsData } = await supabase
+          .from("events")
+          .select("organization_id")
+          .eq("status", "published")
+          .gte("starts_at", new Date().toISOString());
 
-        fetchClubs();
-    }, []);
+        const counts: Record<string, number> = {};
+        for (const e of eventsData || []) {
+          if (e.organization_id) counts[e.organization_id] = (counts[e.organization_id] || 0) + 1;
+        }
 
-    const displayedClubs = clubs.filter(club =>
-        club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (club.category && club.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (club.address && club.address.toLowerCase().includes(searchQuery.toLowerCase()))
-    ).sort((a, b) => {
-        if (sortBy === "Nom") return a.name.localeCompare(b.name);
-        if (sortBy === "Sport") return (a.category || "").localeCompare(b.category || "");
-        if (sortBy === "Ville") return (a.address || "").localeCompare(b.address || "");
-        return 0;
+        const result = (data || []).map(org => ({
+          ...org,
+          category: "Club",
+          eventCount: counts[org.id] || 0,
+        }));
+
+        setClubs(result);
+      } catch (err) {
+        console.error("Error fetching clubs:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClubs();
+  }, []);
+
+  const displayed = clubs
+    .filter(c =>
+      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.address || "").toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === "Nom") return a.name.localeCompare(b.name);
+      if (sortBy === "Ville") return (a.address || "").localeCompare(b.address || "");
+      return 0;
     });
 
-    return (
-        <div className="min-h-screen bg-white font-sans">
-            <SEO
-                title="Découvrez les clubs"
-                description="Trouvez les meilleurs clubs sportifs et associations sur Panache. Tennis, Football, Natation et plus encore."
-            />
-            <Navbar variant="orange" />
+  return (
+    <div style={{ minHeight: "100vh", background: "#FAF8F5" }}>
+      <SEO
+        title="Clubs sportifs — Panache"
+        description="Découvrez tous les clubs sportifs inscrits sur Panache."
+      />
+      <Navbar />
 
-            {/* Header Section */}
-            <div className="pt-40 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-                <h1 className="text-4xl md:text-5xl font-bold mb-10 tracking-tight">Tous les clubs</h1>
+      {/* Hero section */}
+      <div style={{ background: "#FFFFFF", paddingBottom: "0" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "48px 40px 40px" }}>
+          <span className="eyebrow">Nos partenaires</span>
+          <h1 style={{
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 800,
+            fontSize: "clamp(32px, 4vw, 52px)",
+            color: "#141414",
+            letterSpacing: "-0.03em",
+            lineHeight: 1.06,
+            marginBottom: "32px",
+          }}>
+            Tous les clubs
+          </h1>
 
-                <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-                    {/* Search Bar */}
-                    <div className="relative w-full md:max-w-xl">
-                        <Input
-                            placeholder="Sport, Lieu..."
-                            className="h-14 rounded-full pl-6 pr-14 border-0 bg-gray-100/50 focus:bg-white transition-colors shadow-sm text-lg"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        <Button
-                            className="absolute right-2 top-2 h-10 w-10 rounded-full p-0 flex items-center justify-center hover:scale-105 transition-transform shadow-md"
-                            style={{ background: "#F97316" }}
-                        >
-                            <Search className="h-5 w-5 text-white" />
-                        </Button>
-                    </div>
-
-                    {/* Sort Dropdown */}
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <span className="text-sm font-medium text-gray-500 whitespace-nowrap">Trier par :</span>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="rounded-full border-gray-200 h-10 px-6 gap-2 min-w-[160px] justify-between font-medium hover:bg-gray-50">
-                                    {sortBy}
-                                    <ChevronDown className="h-4 w-4 opacity-50" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[160px]">
-                                <DropdownMenuItem onClick={() => setSortBy("Nom")}>Nom</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSortBy("Sport")}>Sport</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setSortBy("Ville")}>Ville</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
+          {/* Barre de recherche + tri */}
+          <div style={{
+            display: "flex",
+            gap: "12px",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}>
+            {/* Search */}
+            <div style={{ position: "relative", flex: "1", minWidth: "240px", maxWidth: "480px" }}>
+              <Search
+                size={16}
+                color="#6B6B6B"
+                style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)" }}
+              />
+              <input
+                type="text"
+                placeholder="Rechercher un club, une ville..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  width: "100%",
+                  height: "48px",
+                  paddingLeft: "44px",
+                  paddingRight: "16px",
+                  borderRadius: "50px",
+                  border: "1.5px solid #E8E5DF",
+                  background: "white",
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "14px",
+                  color: "#141414",
+                  outline: "none",
+                  transition: "border-color 0.15s",
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = "#FF6B1A")}
+                onBlur={e => (e.currentTarget.style.borderColor = "#E8E5DF")}
+              />
             </div>
 
-            {/* Clubs Grid */}
-            <main className="px-4 sm:px-6 lg:px-8 pb-24 max-w-7xl mx-auto">
-                {loading ? (
-                    <div className="flex justify-center py-20">
-                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                    </div>
-                ) : displayedClubs.length === 0 ? (
-                    <div className="text-center py-20 text-gray-500">
-                        Aucun club trouvé.
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {displayedClubs.map((club) => (
-                            <ClubCard
-                                key={club.id}
-                                id={club.id}
-                                name={club.name}
-                                category={club.category === 'club' ? 'Club Sportif' : (club.category || 'Club')}
-                                location={club.address || "Lieu non précisé"}
-                                logo={club.logo_url || "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Tennis_ball.svg/1024px-Tennis_ball.svg.png"} // Fallback logo
-                                color="#F97316" // Default orange color
-                            />
-                        ))}
-                    </div>
-                )}
-            </main>
+            {/* Tri */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setSortOpen(!sortOpen)}
+                style={{
+                  height: "48px",
+                  padding: "0 20px",
+                  borderRadius: "50px",
+                  border: "1.5px solid #E8E5DF",
+                  background: "white",
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "#141414",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "border-color 0.15s",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = "#FF6B1A")}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = "#E8E5DF")}
+              >
+                Trier : {sortBy}
+                <ChevronDown size={14} />
+              </button>
+              {sortOpen && (
+                <div style={{
+                  position: "absolute", top: "52px", right: 0, zIndex: 50,
+                  background: "white", borderRadius: "12px",
+                  border: "1.5px solid #E8E5DF",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+                  overflow: "hidden", minWidth: "140px",
+                }}>
+                  {SORTS.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => { setSortBy(s); setSortOpen(false); }}
+                      style={{
+                        display: "block", width: "100%",
+                        padding: "12px 16px",
+                        textAlign: "left",
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontSize: "13px",
+                        fontWeight: sortBy === s ? 600 : 400,
+                        color: sortBy === s ? "#FF6B1A" : "#141414",
+                        background: sortBy === s ? "#FFF2EB" : "white",
+                        border: "none", cursor: "pointer",
+                        transition: "background 0.15s",
+                        minHeight: "auto",
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-            <Footer />
+            {/* Compteur */}
+            <span style={{ fontSize: "13px", color: "#6B6B6B", marginLeft: "4px" }}>
+              {displayed.length} club{displayed.length > 1 ? "s" : ""}
+            </span>
+          </div>
         </div>
-    );
+      </div>
+
+      {/* Grille clubs */}
+      <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 40px 80px" }}>
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
+            <Loader2 style={{ width: 32, height: 32, color: "#FF6B1A" }} className="animate-spin" />
+          </div>
+        ) : displayed.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "80px 0", color: "#6B6B6B" }}>
+            <p style={{ fontSize: "16px", marginBottom: "8px" }}>Aucun club trouvé.</p>
+            <button
+              onClick={() => setSearchQuery("")}
+              style={{
+                fontSize: "13px", fontWeight: 600,
+                color: "#FF6B1A", background: "none",
+                border: "none", cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Réinitialiser la recherche
+            </button>
+          </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "20px",
+          }}
+            className="clubs-grid"
+          >
+            {displayed.map(club => (
+              <ClubCard
+                key={club.id}
+                id={club.id}
+                name={club.name}
+                category={club.category}
+                location={club.address || undefined}
+                logo={club.logo_url || undefined}
+                eventCount={club.eventCount}
+              />
+            ))}
+          </div>
+        )}
+      </main>
+
+      <Footer />
+
+      <style>{`
+        @media (max-width: 960px) {
+          .clubs-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 600px) {
+          .clubs-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </div>
+  );
 };
 
 export default Clubs;
