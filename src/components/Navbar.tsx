@@ -62,14 +62,33 @@ export const Navbar = () => {
             gap: "7px",
           }}
         >
-          <span style={{
-            width: "7px", height: "7px",
-            background: "#FF6B1A",
-            borderRadius: "50%",
-            opacity: 0.7,
-            display: "inline-block",
-          }} />
-          Panache
+          <img
+            src="/panachP.png"
+            alt="Panache"
+            style={{ height: "28px", width: "auto" }}
+            onError={e => {
+              e.currentTarget.style.display = "none";
+              const next = e.currentTarget.nextElementSibling as HTMLElement;
+              if (next) next.style.display = "flex";
+            }}
+          />
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "7px",
+            }}
+          >
+            <span style={{
+              width: "7px", height: "7px",
+              background: "#FF6B1A",
+              borderRadius: "50%",
+              opacity: 0.7,
+              display: "inline-block",
+              flexShrink: 0,
+            }} />
+            Panache
+          </span>
         </Link>
 
         {/* Nav desktop */}
