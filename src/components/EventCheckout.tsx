@@ -1,15 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, CreditCard, Loader2, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import { Minus, Plus, CreditCard, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface TicketType {
   id: string;
@@ -38,12 +33,10 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
     charges_enabled: false
   });
 
-  // Vérifier le statut Stripe de l'organisation
   useEffect(() => {
     const checkStripeStatus = async () => {
       setIsStripeStatusLoading(true);
       try {
-        // Récupérer l'organisation de l'événement
         const { data: eventData, error } = await supabase
           .from('events')
           .select('organization_id, organizations(stripe_account_id)')
@@ -56,7 +49,6 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
         }
 
         if (eventData.organizations?.stripe_account_id) {
-          // Vérifier le statut du compte Stripe
           const { data: statusData, error: statusError } = await supabase.functions.invoke('check-connect-status', {
             body: { organizationId: eventData.organization_id }
           });
@@ -82,10 +74,8 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
     const ticketType = ticketTypes.find(t => t.id === ticketId);
     if (!ticketType) return;
 
-    // Calculer les billets réellement disponibles (en tenant compte des ventes)
     const soldCount = registrations.filter(r => r.ticket_type_id === ticketId).length;
     const availableCount = Math.max(0, ticketType.quantity - soldCount);
-
     const maxAllowed = Math.min(availableCount, ticketType.max_per_order);
     const newQuantity = Math.max(0, Math.min(quantity, maxAllowed));
 
@@ -118,14 +108,13 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
       return;
     }
 
-    if (!stripeStatus.charges_enabled) {
+    if (!stripeStatus.charges_enabled && getTotalPrice() > 0) {
       toast.error("Les paiements ne sont pas encore activés pour cet événement");
       return;
     }
 
     setIsLoading(true);
     try {
-      // Préparer les données des billets sélectionnés
       const selectedTicketTypes = Object.entries(selectedTickets)
         .filter(([_, quantity]) => quantity > 0)
         .map(([ticketId, quantity]) => {
@@ -155,19 +144,15 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
       });
 
       if (invokeError) {
-        // Gérer spécifiquement les erreurs remontées par l'edge function
         const errorMessage = invokeError.message || invokeError.error || 'Erreur lors de la création de la session de paiement';
         throw new Error(errorMessage);
       }
 
       const data = result;
 
-      // Rediriger vers Stripe Checkout si payant
       if (data?.url) {
         window.location.href = data.url;
-      }
-      // Rediriger directement vers la page succès si gratuit
-      else if (data?.success && data?.orderId) {
+      } else if (data?.success && data?.orderId) {
         window.location.href = `${window.location.origin}/payment-success?order_id=${data.orderId}`;
       }
     } catch (error) {
@@ -178,9 +163,12 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
     }
   };
 
-  const isCheckoutDisabled = getTotalTickets() === 0 || isLoading || !stripeStatus.charges_enabled;
+  const hasOnlyFreeTickets = ticketTypes.every(t => t.price_cents === 0);
+  const totalPrice = getTotalPrice();
+  const isPaidOrder = totalPrice > 0;
+  const isCheckoutDisabled = getTotalTickets() === 0 || isLoading || (isPaidOrder && !stripeStatus.charges_enabled);
 
-  if (isStripeStatusLoading) {
+  if (isStripeStatusLoading && !hasOnlyFreeTickets) {
     return (
       <div className="p-12 flex flex-col items-center justify-center space-y-4">
         <Loader2 className="h-12 w-12 text-orange-500 animate-spin" />
@@ -191,14 +179,11 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
 
   return (
     <div className="flex flex-col lg:flex-row h-full">
-      {/* Left: Summary and Info */}
       <div className="lg:w-2/5 p-8 bg-black text-white flex flex-col justify-between">
         <div>
           <div className="flex items-center gap-2 mb-6">
-
             <span className="text-xs font-bold uppercase tracking-widest text-orange-400">Paiement sécurisé</span>
           </div>
-
           <h2 className="text-3xl font-extrabold mb-4 leading-tight">{eventTitle}</h2>
           <div className="space-y-4 text-gray-400">
             <div className="flex items-center gap-3">
@@ -215,7 +200,6 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
             </div>
           </div>
         </div>
-
         <div className="mt-12 pt-8 border-t border-white/10">
           <p className="text-xs text-gray-500 leading-relaxed">
             En procédant au paiement, vous acceptez les conditions générales de vente de Panache et de l'organisateur.
@@ -223,7 +207,6 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
         </div>
       </div>
 
-      {/* Right: Ticket Selection */}
       <div className="lg:w-3/5 p-8 bg-white overflow-y-auto">
         <div className="mb-8">
           <h3 className="text-2xl font-bold text-black mb-2">Choisir vos billets</h3>
@@ -263,7 +246,7 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
                     </div>
                   </div>
 
-                  {!isSoldOut && stripeStatus.charges_enabled && (
+                  {!isSoldOut && (stripeStatus.charges_enabled || ticketType.price_cents === 0) && (
                     <div className="flex items-center gap-3 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
                       <Button
                         variant="ghost"
@@ -274,9 +257,7 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-
                       <span className="w-6 text-center font-bold text-gray-900">{selectedQty}</span>
-
                       <Button
                         variant="ghost"
                         size="icon"
@@ -294,7 +275,6 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
           })}
         </div>
 
-        {/* Status Messages */}
         {!stripeStatus.connected && (
           <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 items-start">
             <AlertCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
@@ -315,7 +295,6 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
           </div>
         )}
 
-        {/* Order Summary */}
         <div className="mt-auto pt-6 border-t border-gray-100">
           <div className="flex justify-between items-end mb-6">
             <div>
@@ -346,9 +325,9 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
             )}
             {isLoading ? "Traitement..." :
               getTotalTickets() === 0 ? "Sélectionner des billets" :
-                getTotalPrice() === 0 ? "Confirmer la réservation" :
+                getTotalPrice() === 0 ? "Confirmer la réservation →" :
                   !stripeStatus.charges_enabled ? "Paiements non disponibles" :
-                    "Confirmer la commande"}
+                    "Confirmer la commande →"}
           </Button>
 
           <div className="mt-4 flex items-center justify-center gap-2 opacity-50 grayscale hover:grayscale-0 transition-all cursor-default">
