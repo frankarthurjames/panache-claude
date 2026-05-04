@@ -121,7 +121,7 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
     if (!user) {
       sessionStorage.setItem('pendingTickets', JSON.stringify(selectedTickets));
       sessionStorage.setItem('pendingEventId', eventId);
-      navigate('/login', { state: { from: window.location.pathname } });
+      navigate('/auth', { state: { from: window.location.pathname } });
       return;
     }
 
