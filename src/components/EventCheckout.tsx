@@ -50,6 +50,7 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
           return;
         }
 
+        console.log('organizationId envoyé:', eventData?.organization_id);
         const { data: statusData, error: statusError } = await supabase.functions.invoke('check-connect-status', {
           body: { organizationId: eventData.organization_id }
         });
