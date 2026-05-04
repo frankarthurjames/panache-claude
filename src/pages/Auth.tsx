@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import panacheLogoText from "@/assets/panache-logo-text.png";
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from || '/dashboard';
   const { signIn, signUp, user, loading } = useAuth();
   const { toast } = useToast();
 
@@ -24,7 +26,7 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user && !loading) {
-      navigate('/dashboard');
+      navigate(from);
     }
   }, [user, loading, navigate]);
 
@@ -62,7 +64,7 @@ const Auth = () => {
           title: "Connexion réussie",
           description: "Bienvenue sur Panache Esport !",
         });
-        navigate('/dashboard');
+        navigate(from);
       }
     } catch (error) {
       toast({
