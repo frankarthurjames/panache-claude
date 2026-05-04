@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, CreditCard, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
@@ -25,6 +26,7 @@ interface EventCheckoutProps {
 
 const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrations }: EventCheckoutProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedTickets, setSelectedTickets] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isStripeStatusLoading, setIsStripeStatusLoading] = useState(true);
@@ -68,6 +70,16 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
     checkStripeStatus();
   }, [eventId]);
 
+  useEffect(() => {
+    const pendingEventId = sessionStorage.getItem('pendingEventId');
+    const pendingTickets = sessionStorage.getItem('pendingTickets');
+    if (pendingEventId === eventId && pendingTickets) {
+      setSelectedTickets(JSON.parse(pendingTickets));
+      sessionStorage.removeItem('pendingTickets');
+      sessionStorage.removeItem('pendingEventId');
+    }
+  }, [eventId]);
+
   const updateTicketQuantity = (ticketId: string, quantity: number) => {
     const ticketType = ticketTypes.find(t => t.id === ticketId);
     if (!ticketType) return;
@@ -95,11 +107,6 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
   };
 
   const handleCheckout = async () => {
-    if (!user) {
-      toast.error("Vous devez être connecté pour acheter des billets");
-      return;
-    }
-
     if (getTotalTickets() === 0) {
       toast.error("Veuillez sélectionner au moins un billet");
       return;
@@ -107,6 +114,13 @@ const EventCheckout = ({ eventId, eventTitle, eventDate, ticketTypes, registrati
 
     if (!stripeStatus.charges_enabled && getTotalPrice() > 0) {
       toast.error("Les paiements ne sont pas encore activés pour cet événement");
+      return;
+    }
+
+    if (!user) {
+      sessionStorage.setItem('pendingTickets', JSON.stringify(selectedTickets));
+      sessionStorage.setItem('pendingEventId', eventId);
+      navigate('/login', { state: { from: window.location.pathname } });
       return;
     }
 
