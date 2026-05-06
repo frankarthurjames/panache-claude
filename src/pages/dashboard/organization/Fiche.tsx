@@ -41,6 +41,7 @@ const Fiche = () => {
     venue_2: "",
     venue_3: "",
     accessibility_pmr: false,
+    banner_url: "",
   });
 
   useEffect(() => {
@@ -76,6 +77,7 @@ const Fiche = () => {
           venue_2: data.venue_2 || "",
           venue_3: data.venue_3 || "",
           accessibility_pmr: data.accessibility_pmr || false,
+          banner_url: data.banner_url || "",
         });
       } catch (err) {
         toast.error("Erreur lors du chargement");
@@ -107,6 +109,7 @@ const Fiche = () => {
           venue_2: formData.venue_2 || null,
           venue_3: formData.venue_3 || null,
           accessibility_pmr: formData.accessibility_pmr,
+          banner_url: formData.banner_url || null,
         })
         .eq('id', orgId);
       if (error) throw error;
@@ -238,6 +241,35 @@ const Fiche = () => {
             />
             <p className="text-xs text-gray-400 text-right">{formData.bon_a_savoir.length}/200</p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Bannière */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Image bannière</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>URL de l'image</Label>
+            <Input
+              type="url"
+              placeholder="https://..."
+              value={formData.banner_url}
+              onChange={(e) => setFormData(p => ({ ...p, banner_url: e.target.value }))}
+            />
+            <p className="text-xs text-gray-400">Image affichée en fond sur votre fiche publique (1600×900px recommandé)</p>
+          </div>
+          {formData.banner_url && (
+            <div style={{ height: '120px', borderRadius: '12px', overflow: 'hidden' }}>
+              <img
+                src={formData.banner_url}
+                alt="Aperçu bannière"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

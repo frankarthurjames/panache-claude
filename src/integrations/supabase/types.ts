@@ -325,53 +325,89 @@ export type Database = {
       organizations: {
         Row: {
           address: string | null
+          accessibility_pmr: boolean | null
+          banner_url: string | null
           billing_country: string | null
           billing_email: string | null
+          bon_a_savoir: string | null
           created_at: string | null
           created_by_user_id: string | null
           description: string | null
+          federation: string | null
+          founded_year: number | null
           id: string
           logo_url: string | null
+          members_count: number | null
           name: string
           phone: string | null
+          practice_type: string | null
+          public_type: string | null
           siret_number: string | null
           slug: string | null
+          sport_id: string | null
           stripe_account_id: string | null
           updated_at: string | null
+          venue_1: string | null
+          venue_2: string | null
+          venue_3: string | null
           website: string | null
         }
         Insert: {
           address?: string | null
+          accessibility_pmr?: boolean | null
+          banner_url?: string | null
           billing_country?: string | null
           billing_email?: string | null
+          bon_a_savoir?: string | null
           created_at?: string | null
           created_by_user_id?: string | null
           description?: string | null
+          federation?: string | null
+          founded_year?: number | null
           id?: string
           logo_url?: string | null
+          members_count?: number | null
           name: string
           phone?: string | null
+          practice_type?: string | null
+          public_type?: string | null
           siret_number?: string | null
           slug?: string | null
+          sport_id?: string | null
           stripe_account_id?: string | null
           updated_at?: string | null
+          venue_1?: string | null
+          venue_2?: string | null
+          venue_3?: string | null
           website?: string | null
         }
         Update: {
           address?: string | null
+          accessibility_pmr?: boolean | null
+          banner_url?: string | null
           billing_country?: string | null
           billing_email?: string | null
+          bon_a_savoir?: string | null
           created_at?: string | null
           created_by_user_id?: string | null
           description?: string | null
+          federation?: string | null
+          founded_year?: number | null
           id?: string
           logo_url?: string | null
+          members_count?: number | null
           name?: string
           phone?: string | null
+          practice_type?: string | null
+          public_type?: string | null
           siret_number?: string | null
           slug?: string | null
+          sport_id?: string | null
           stripe_account_id?: string | null
           updated_at?: string | null
+          venue_1?: string | null
+          venue_2?: string | null
+          venue_3?: string | null
           website?: string | null
         }
         Relationships: [

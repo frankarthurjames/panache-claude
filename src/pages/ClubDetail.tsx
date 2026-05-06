@@ -46,7 +46,12 @@ const ClubDetail = () => {
                 // Fetch published events for this org (using real UUID)
                 const { data: events, error: eventsError } = await supabase
                     .from('events')
-                    .select('*, ticket_types(price_cents)')
+                    .select(`
+                        id, title, starts_at, city, venue, images,
+                        registration_type, external_registration_url,
+                        sports:sport_id ( name, slug ),
+                        ticket_types ( price_cents )
+                    `)
                     .eq('organization_id', org.id)
                     .eq('status', 'published')
                     .gte('starts_at', new Date().toISOString())
@@ -89,57 +94,84 @@ const ClubDetail = () => {
                 description={club.description?.substring(0, 160) || `Découvrez le club ${club.name} sur Panache.`}
                 image={club.logo_url || club.banner_url}
             />
-            <Navbar variant="transparent" />
-
-            {/* Hero Section */}
-            <div className="relative h-[400px] overflow-hidden">
-                {/* Slanted Background */}
-                <div
-                    className="absolute inset-0 bg-[#F97316] transform -skew-y-3 origin-top-left scale-110"
-                    style={{ zIndex: 0 }}
-                />
-
-                {/* Background Image Overlay (Optional, using solid pink as per mock for now, but mock has image) */}
-                <div className="absolute inset-0 z-0 opacity-50">
+            {/* Hero */}
+            <div style={{
+                position: 'relative',
+                minHeight: '420px',
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+                paddingBottom: '48px',
+            }}>
+                {/* Image de fond */}
+                <div style={{ position: 'absolute', inset: 0 }}>
                     <img
-                        src={club.banner_url || "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=1600&q=80"}
-                        alt="Cover"
-                        className="w-full h-full object-cover"
+                        src={club.banner_url || 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=1600&q=80'}
+                        alt={club.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
-                    <div className="absolute inset-0 bg-[#F97316]/80 mix-blend-multiply" />
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%)' }} />
                 </div>
 
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center relative z-10 pt-20">
-                    <div className="text-white max-w-2xl">
-                        <h1 className="text-5xl font-bold mb-4">{club.name}</h1>
-                        <div className="flex flex-wrap gap-2 mt-3 mb-6">
+                {/* Navbar par-dessus */}
+                <div style={{ position: 'relative', zIndex: 20 }}>
+                    <Navbar variant="transparent" />
+                </div>
+
+                {/* Contenu hero */}
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8" style={{ position: 'relative', zIndex: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', flexWrap: 'wrap' }}>
+
+                        {/* Logo */}
+                        {club.logo_url && (
+                            <div style={{
+                                width: '80px', height: '80px', borderRadius: '12px',
+                                overflow: 'hidden', background: 'white', flexShrink: 0,
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px',
+                            }}>
+                                <img src={club.logo_url} alt={club.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            </div>
+                        )}
+
+                        {/* Nom + infos */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
                             {club.sports?.name && (
-                                <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                <span className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '8px', display: 'block' }}>
                                     {club.sports.name}
                                 </span>
                             )}
-                            {club.members_count && (
-                                <span className="bg-white/20 text-white text-xs font-medium px-3 py-1 rounded-full">
-                                    👥 {club.members_count} licenciés
-                                </span>
-                            )}
-                            {club.founded_year && (
-                                <span className="bg-white/20 text-white text-xs font-medium px-3 py-1 rounded-full">
-                                    📅 Depuis {club.founded_year}
-                                </span>
-                            )}
-                            {club.federation && (
-                                <span className="bg-white/20 text-white text-xs font-medium px-3 py-1 rounded-full">
-                                    🏛️ {club.federation}
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex gap-4">
-                            {club.website && (
-                                <a href={club.website} target="_blank" rel="noopener noreferrer" className="bg-white/20 p-2 rounded-full hover:bg-white/30 transition-colors">
-                                    <Globe className="h-5 w-5" />
-                                </a>
-                            )}
+                            <h1 style={{
+                                fontFamily: "'Poppins', sans-serif", fontWeight: 800, fontStyle: 'italic',
+                                fontSize: 'clamp(28px, 5vw, 52px)', color: 'white',
+                                letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: '16px',
+                            }}>
+                                {club.name}
+                            </h1>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                {club.members_count && (
+                                    <span style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: 'white', padding: '5px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 500 }}>
+                                        👥 {club.members_count} licenciés
+                                    </span>
+                                )}
+                                {club.founded_year && (
+                                    <span style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: 'white', padding: '5px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 500 }}>
+                                        📅 Fondé en {club.founded_year}
+                                    </span>
+                                )}
+                                {club.federation && (
+                                    <span style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: 'white', padding: '5px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 500 }}>
+                                        🏅 {club.federation}
+                                    </span>
+                                )}
+                                {club.accessibility_pmr && (
+                                    <span style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: 'white', padding: '5px 14px', borderRadius: '999px', fontSize: '12px', fontWeight: 500 }}>
+                                        ♿ Accès PMR
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -213,16 +245,11 @@ const ClubDetail = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {clubEvents.length > 0 ? (
                                     clubEvents.map(event => {
-                                        const minPrice = event.ticket_types && event.ticket_types.length > 0
+                                        const minPrice = event.ticket_types?.length
                                             ? Math.min(...event.ticket_types.map((t: any) => t.price_cents))
                                             : 0;
-
-                                        const hasMultiplePrices = event.ticket_types && new Set(event.ticket_types.map((t: any) => t.price_cents)).size > 1;
-                                        const minPriceStr = minPrice > 0 ? `${(minPrice / 100).toFixed(0)}€` : 'Gratuit';
-                                        const priceDisplay = hasMultiplePrices ? `Dès ${minPriceStr}` : minPriceStr;
-
-                                        const sportMatch = event.title.match(/^\[(.*?)\]/);
-                                        const tag = sportMatch ? sportMatch[1] : "Sport";
+                                        const isFree = minPrice === 0;
+                                        const priceDisplay = isFree ? undefined : `${(minPrice / 100).toFixed(0)}€`;
 
                                         return (
                                             <EventCard
@@ -230,10 +257,10 @@ const ClubDetail = () => {
                                                 id={event.id}
                                                 title={event.title}
                                                 date={format(new Date(event.starts_at), "d MMMM yyyy", { locale: fr })}
-                                                location={event.city || event.venue || "Lieu à confirmer"}
-                                                image={event.images?.[0] || 'https://images.unsplash.com/photo-1564982752979-3f7bc974d29a?w=800&q=80'}
-                                                tag={tag}
-                                                tagColor="bg-orange-500"
+                                                location={event.city || event.venue || ''}
+                                                image={event.images?.[0] || 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&q=80'}
+                                                tag={event.sports?.name || 'Sport'}
+                                                isFree={isFree}
                                                 price={priceDisplay}
                                             />
                                         );
